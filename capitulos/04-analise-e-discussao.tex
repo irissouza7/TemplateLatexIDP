@@ -4,19 +4,47 @@
 
 \section{Análise e discussão dos dados}
 
-Apresente os resultados alcançados ou esperados e faça uma análise comparativa
-entre os resultados esperados e os alcançados com a execução do projeto de
-pesquisa ou de intervenção.
+A análise dos dados buscará identificar padrões de evolução dos custos do SINAPI 
+ao longo do tempo e diferenças entre localidades, avaliando de que forma essas 
+informações podem contribuir para o planejamento de investimentos públicos. 
+A exploração inicial permitirá caracterizar as séries históricas, 
+observar variações territoriais e temporais e identificar aspectos relevantes para a 
+posterior aplicação dos modelos estatísticos e de aprendizado de máquina. 
+
+Os resultados dos modelos serão analisados de forma comparativa, considerando métricas quantitativas de 
+desempenho e sua capacidade de apoiar decisões relacionadas a custos e investimentos públicos. 
+A discussão buscará relacionar os resultados obtidos ao problema da pesquisa, 
+especialmente quanto ao potencial da análise preditiva do SINAPI para antecipar 
+variações de custos, apoiar o planejamento orçamentário e subsidiar políticas públicas 
+baseadas em evidências.
 
 \subsection{Apresentação dos resultados}
 
-Organize os resultados na mesma ordem em que os objetivos específicos foram
-%%enunciados na introdução. Use tabelas, quadros e gráficos sempre que isso tornar
-%%a leitura mais clara, lembrando que toda ilustração precisa ser citada no texto
-%%(ver Tabela~\ref{tab:exemplo} e Figura~\ref{fig:exemplo}).
+A análise será organizada nas dimensões apresentadas na 
+Tabela~\ref{tab:dimensoes-analise-sinapi}, permitindo relacionar as características 
+dos dados às diferentes etapas previstas para o desenvolvimento da pesquisa.
+
+\begin{table}[htb] 
+    \centering 
+    \caption{Dimensões previstas para a análise dos dados do SINAPI} 
+    \label{tab:dimensoes-analise-sinapi}
+     \begin{tabular}{p{0.25\textwidth} p{0.60\textwidth}}
+         \hline
+          \textbf{Dimensão} & \textbf{Finalidade da análise} \\
+           \hline
+            Temporal & Identificar tendências e variações dos custos ao longo do tempo.\\
+            Territorial & Comparar o comportamento dos custos entre diferentes localidades.\\
+            Preditiva & Avaliar modelos estatísticos e de aprendizado de máquina para previsão de custos. \\
+            Decisória & Examinar como os resultados podem apoiar o planejamento de investimentos públicos. \\
+             \hline
+             \end{tabular}
+             \fonte{Elaboração própria.}
+             \end{table}
 
 \subsection{Discussão}
 
-Confronte os resultados com o referencial teórico construído no Capítulo~2.
-Indique convergências, divergências e possíveis explicações, sempre com o devido
-suporte bibliográfico.
+A discussão confrontará os resultados alcançados pelos diferentes modelos 
+com o referencial teórico apresentado no Capítulo~2. Além da precisão preditiva, 
+será considerada a possibilidade de utilização dos resultados como evidência para 
+subsidiar decisões públicas, reconhecendo as limitações decorrentes da qualidade dos dados, 
+do recorte temporal escolhido e das diferenças territoriais existentes na base SINAPI.
