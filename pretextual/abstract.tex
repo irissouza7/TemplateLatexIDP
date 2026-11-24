@@ -3,5 +3,46 @@
 %% config/dados.tex.
 
 \begin{abstract}
-This research investigates the application of spatiotemporal statistical models, machine learning techniques, and big data approaches to data from the National System of Construction Costs and Indices (SINAPI) in order to support decision-making in public infrastructure policies. The study is based on the recognition that SINAPI is the primary national reference for construction costs in Brazil and that its potential for predictive analytics remains underexplored. The research seeks to demonstrate the importance of forecasting SINAPI data and to assess whether the use of reference values from the São Paulo region for locations lacking local observations may lead to overpricing in public procurement contracts. The theoretical framework encompasses concepts from data science, artificial intelligence, machine learning, spatiotemporal analysis, and evidence-based public policy management. The proposed approach includes the development and validation of models capable of identifying trends, estimating future costs, and supporting budget planning for investments in housing, sanitation, and infrastructure. The study also examines the benefits of anticipating risks associated with budget insufficiency, project interruptions, and economic-financial imbalances in construction contracts. The data analyzed are derived from the public SINAPI database, maintained by CAIXA Econômica Federal in partnership with the Brazilian Institute of Geography and Statistics (IBGE), covering historical series of construction costs and inputs. As an expected outcome, this research aims to demonstrate that the application of advanced data analytics techniques can transform SINAPI from a predominantly consultative tool into an intelligence platform capable of supporting strategic decision-making, increasing the efficiency of public resource allocation, and strengthening evidence-based public policy formulation.
+The Brazilian National System of Construction Costs and Indices (SINAPI) is one of the 
+main reference systems used for budgeting construction works and engineering services. 
+For transportation infrastructure projects, the applicable reference is the Reference 
+Cost System for Construction Works (SICRO). This study focuses on SINAPI and investigates 
+an issue that often remains unnoticed by users of its price data: when the Brazilian 
+Institute of Geography and Statistics (IBGE) is unable to obtain the minimum required 
+sample for a representative input in a given federative unit, no local price is collected. 
+Until July 2024, these gaps were reported using the price observed in São Paulo; since 
+August 2024, they have been published as blank values, although the cost calculations 
+for SINAPI compositions continue to use the São Paulo price.
+
+This research evaluates whether machine learning methods can estimate missing local 
+prices with lower error than the institutional rule and assesses the impact of this 
+choice on reference costs. A historical database was constructed comprising **318 monthly 
+periods effectively available between January 2000 and September 2026**, with no records 
+for October, November, and December 2005, and consolidated in CAIXA’s Data Lake within a 
+Databricks environment. The consolidated table contains **74,317,246 records**, 
+corresponding to **51,917,085 distinct analytical cells**, defined by the combination of 
+input, federative unit, and monthly period, after eliminating duplicates arising from the 
+payroll-tax-relieved and non-relieved regimes. A total of **12,012 representative inputs** 
+were identified across the 27 Brazilian federative units.
+
+Missing local price observations account for **10.15% of the analytical cells**, 
+totaling **5,268,183 cells without a locally collected price**. Among the gaps still 
+present at the end of the study period for which a previous local observation existed, 
+the median gap age is **85 months**. In addition, **13,194 input–federative unit combinations 
+never had a locally collected price** over the observed historical period, corresponding 
+to **4.07% of the 324,324 input–federative unit combinations** analyzed. From this 
+historical data layer, the analytical datasets used in the imputation, propagation to 
+cost compositions, and forecasting studies are constructed.
+
+Ten methods were compared, including institutional rules, matrix completion, LightGBM, 
+neural networks, SAITS, and an ensemble, under evaluation protocols designed to reproduce 
+the geographic and persistent patterns of missingness. The experimental results currently 
+available indicate that the ensemble reduced the median error from **16.4% to 11.2%**, 
+was the only model included in the confidence set, and produced calibrated prediction 
+intervals. When propagated to cost compositions, the imputations indicated an asymmetric 
+underestimation associated with the São Paulo-based rule, although the impact on broader 
+construction budgets remained below **1.5%**. In the forecasting study, the random walk 
+benchmark could not be outperformed at horizons of up to three months, whereas aggregation 
+based on the SINAPI structure reduced forecasting error at horizons ranging from six to 
+twelve months.
 \end{abstract}

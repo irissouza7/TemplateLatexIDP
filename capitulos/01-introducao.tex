@@ -8,51 +8,162 @@
 %% Titulos: nao utilize ponto apos a numeracao das secoes.
 %%=============================================================================
 
-\section{Introdução}
+\section{INTRODUÇÃO}
 
-Na primeira página da parte textual do trabalho de conclusão de curso, faça a
-apresentação de sua pesquisa. A introdução deverá ocupar uma ou, no máximo, duas
-páginas do seu trabalho. Nela, dê um panorama da temática, exponha a questão
-problema que conduzirá a pesquisa proposta, a hipótese e a justificativa.
+Estimar quanto deve custar uma obra pública é uma etapa essencial para o planejamento da 
+contratação, a definição dos recursos necessários e o controle da aplicação do dinheiro 
+público. No Brasil, essa estimativa utiliza sistemas oficiais de custos que procuram 
+representar os preços praticados nas diferentes regiões do país. A escolha do sistema 
+depende do tipo de empreendimento: para obras e serviços de engenharia em geral, a 
+principal referência é o Sistema Nacional de Pesquisa de Custos e Índices da Construção 
+Civil (SINAPI); para obras de infraestrutura de transportes, como rodovias, ferrovias e 
+outras intervenções próprias desse setor, utiliza-se o Sistema de Custos Referenciais de 
+Obras (SICRO), mantido pelo Departamento Nacional de Infraestrutura de Transportes (DNIT). 
+Essa distinção é importante porque este trabalho se concentra exclusivamente no SINAPI.
 
-Os capítulos (seções) e subcapítulos (subseções) são sequenciais. O título de
-cada seção primária (\textbf{1 INTRODUÇÃO}, \textbf{2 REFERENCIAL TEÓRICO} etc.)
-é grafado em letras maiúsculas e negritadas. Não utilize ponto após a numeração
-das seções. Deixe uma linha em branco entre as seções.
+Mantido pela Caixa Econômica Federal (CAIXA) em conjunto com o Instituto Brasileiro de 
+Geografia e Estatística (IBGE), o sistema publica mensalmente preços de cerca de cinco 
+mil insumos e custos de milhares de composições de serviços para as 27 unidades da 
+federação. No âmbito das obras às quais se aplica, seus preços servem de base para a 
+elaboração dos orçamentos de referência e para a análise de eventuais sobrepreços. O 
+Decreto n. 7.983/2013 estabeleceu os sistemas oficiais de custos como referências para 
+obras e serviços de engenharia executados com recursos da União, e a Lei n. 14.133/2021 
+manteve SINAPI e SICRO como parâmetros para a estimativa de custos das contratações 
+públicas (\citeonline{BRASIL, 2021}).
 
-O Sistema Nacional de Pesquisa de Custos e Índices da Construção Civil (SINAPI) é a principal referência nacional de custos para obras e serviços de engenharia. Sua estrutura analítica e territorial, atualizada mensalmente, torna-o uma base pública singular para estudos de ciência de dados aplicados à política pública.
-Em junho de 2026 a CAIXA lançou o desafio institucional de modernização do SINAPI por meio do certame 0071/2026, que aponta para a necessidade de selecionar empresas e startups de tecnologia capazes de desenvolver soluções modernas para ampliar, integrar e facilitar o acesso e uso dos dados da construção civil no Brasil. Essa diretriz converge diretamente com a proposta desta pesquisa, que busca aplicar modelos estatísticos espaço-temporais, machine learning e big data para apoiar decisões em políticas públicas de infraestrutura.
-Apesar de amplamente utilizado, o SINAPI permanece predominantemente consultivo, sem exploração plena de seu potencial analítico para previsão e monitoramento. A pergunta central é: Porque é importante prever os dados do SINAPI?
-Essa riqueza, entretanto, convive com diversos limites metodológicos como, a base pública não evidencia variáveis de execução física de obras, prazo de contrato, qualidade final do empreendimento ou desempenho físico-financeiro consolidado e o uso dos valores da região de São Paulo para as demais regiões quando da ausência de valores.
-Por fim, essa obra tem como objetivo geral desenvolver e validar modelos de inteligência artificial e ciência de dados aplicados ao SINAPI para apoiar a tomada de decisão em políticas públicas de infraestrutura, como objetivos específicos responder as perguntas porque é importante prever os dados do SINAPI, e; na ausência dos dados do SINAPI em outras regiões, ao realizar a sobreposição pelos dados de São Paulo pode gerar um sobrepreço nas contratações públicas de construção civil?
+Embora o SINAPI seja amplamente utilizado, nem todos os valores publicados resultam de 
+pesquisa direta de mercado. Os insumos são organizados em famílias homogêneas e, em cada 
+unidade da federação, o IBGE pesquisa o preço de um insumo representante de cada família. 
+Os preços dos demais itens são calculados a partir desse representante por meio de 
+coeficientes de representatividade (\citeonline{CAIXA ECONÔMICA FEDERAL, 2026}). O problema surge 
+quando não há amostra suficiente para determinar o preço do insumo representante em 
+determinada unidade da federação. Até julho de 2024, essas lacunas apareciam preenchidas 
+com o preço de São Paulo. A partir de agosto de 2024, o preço passou a ser publicado em 
+branco, tornando a ausência mais visível. Entretanto, para o cálculo do custo das 
+composições, continua sendo utilizado o preço paulista (\citeonline{BRASIL. MINISTÉRIO DA GESTÃO E 
+DA INOVAÇÃO EM SERVIÇOS PÚBLICOS, 2025}).
 
+Para esta pesquisa, os dados históricos do SINAPI, referentes ao período de janeiro de 
+2000 a setembro de 2026, foram consolidados no Data Lake da CAIXA, em ambiente Databricks. 
+A tabela consolidada contém 74.317.246 registros. Após a eliminação das duplicidades 
+decorrentes dos regimes desonerado e não desonerado, esses dados correspondem a 
+51.917.085 células analíticas distintas, definidas pela combinação entre insumo, unidade 
+da federação e competência. Foram identificados 12.012 insumos representantes, 
+distribuídos pelas 27 unidades da federação, e 318 competências mensais efetivamente 
+disponíveis no período analisado. Embora o intervalo entre janeiro de 2000 e setembro de 
+2026 compreenda 321 meses, não há registros na base para outubro, novembro e dezembro de 
+2005.
+
+A análise dessa camada histórica evidencia que a ausência de preços coletados localmente 
+não é um fenômeno residual. Foram identificadas 5.268.183 células sem preço local coletado, 
+equivalentes a 10,15% das células analíticas observadas. Além da frequência das ausências, 
+os dados revelam sua persistência temporal: entre as lacunas ainda vigentes ao final do 
+período e que possuíam alguma coleta local anterior, a idade mediana é de 85 meses. Há 
+ainda 13.194 combinações entre insumo representante e unidade da federação que nunca 
+apresentaram coleta local no histórico observado, correspondentes a 4,07% das 324.324 
+combinações insumo–UF analisadas. Esses números mostram que as ausências não se restringem 
+a falhas pontuais de coleta, mas incluem situações persistentes e casos em que não se 
+observa preço local ao longo de todo o histórico disponível.
+
+Na prática, a utilização do preço de São Paulo significa que o custo de referência de 
+uma obra executada no Amapá, em Roraima ou em outra unidade da federação pode incorporar 
+preços observados em um mercado distinto. A solução permite que o sistema continue 
+calculando as composições quando não há coleta local, mas parte da hipótese de que o 
+preço paulista oferece uma aproximação adequada. Essa hipótese merece ser investigada 
+porque os preços de um mesmo insumo podem diferir de forma relevante entre as unidades 
+da federação.
+
+A própria estrutura do SINAPI oferece informações que podem ajudar a estimar os preços 
+ausentes de outra maneira: preços do mesmo insumo em outras unidades da federação, 
+histórico da própria célula, comportamento de insumos semelhantes e estrutura de 
+famílias e composições. Esses dados permitem tratar a ausência do preço local como um 
+problema de imputação.
+
+Métodos de aprendizado de máquina vêm sendo empregados com frequência crescente na 
+estimativa de custos da construção. A literatura, entretanto, concentra-se sobretudo na 
+previsão do custo de projetos individuais e apresenta limitações recorrentes, como 
+amostras pequenas, validações que não respeitam adequadamente a dimensão temporal e 
+pouca atenção à incerteza das estimativas (\citeonline{TAYEFEH HASHEMI; EBADATI; KAUR, 2020; 17 ELMOUSALAMI, 2020; SHAMIM et al., 2025; WANG et al., 2025}). 
+Este trabalho adota outra perspectiva. Em vez de estimar diretamente quanto custará uma 
+obra, procura estimar o preço local de um insumo quando esse preço não pôde ser coletado. 
+A partir daí, avalia se métodos de aprendizado de máquina fornecem estimativas melhores 
+que a utilização direta do preço de São Paulo e em que medida a regra de preenchimento 
+se propaga para as composições e para os orçamentos de referência.
 
 \subsection{Objetivo geral}
 
-Desenvolver e validar modelos de inteligência artificial e ciência de dados aplicados ao SINAPI para apoiar a tomada de decisão em políticas públicas de infraestrutura, possibilitando a previsão de custos da construção civil e a avaliação de distorções regionais que possam impactar a eficiência e a economicidade das contratações públicas.
+O objetivo geral é avaliar métodos de aprendizado de máquina para a imputação dos preços
+ausentes dos insumos representantes do SINAPI e quantificar o efeito da regra de atribuição do
+preço de São Paulo sobre os custos de referência.
 
 \subsection{Objetivos específicos}
 
 \begin{itemize}
-  \item Objetivo específico 1 Analisar a importância da previsão dos dados do SINAPI para o planejamento orçamentário, a gestão de riscos e a formulação de políticas públicas de infraestrutura, identificando os benefícios da utilização de técnicas preditivas na tomada de decisão governamental;
-  \item Objetivo específico 2 Desenvolver e avaliar modelos estatísticos espaço-temporais, de machine learning e de inteligência artificial aplicados aos dados do SINAPI, visando estimar a evolução futura dos custos da construção civil e identificar padrões regionais e temporais relevantes;
-  \item Objetivo específico 3 Investigar os impactos da utilização de valores de referência do SINAPI da região de São Paulo para localidades sem dados próprios, avaliando o potencial de geração de sobrepreço e seus efeitos sobre a economicidade das contratações públicas de obras e serviços de engenharia.
+  \item Objetivo específico 1 construir e auditar um painel mensal dos relatórios do 
+  SINAPI de janeiro de 2000 a setembro de 2026 e verificar empiricamente as identidades 
+  que ligam preços coletados, preços derivados e custos de composições;
+  \item Objetivo específico 2 caracterizar o padrão de ausência dos preços coletados 
+  quanto à geografia, à classe do insumo e à persistência;
+  \item Objetivo específico 3 comparar regras institucionais de imputação e métodos de 
+  aprendizado de máquina e de aprendizado profundo sob protocolos de validação que 
+  imitam o padrão real de ausência, com quantificação da incerteza;
+  \item Objetivo específico 4 propagar as imputações para o custo das composições e de 
+  orçamentos estilizados e medir o viés da regra de São Paulo; e
+  \item Objetivo específico 5 avaliar, de forma complementar, a previsão de preços e 
+  custos de um a doze meses à frente.
 \end{itemize}
 
-\subsection{Problema}
+\subsection{Problema e pergunta de pesquisa}
 
-Como modelos de inteligência artificial, machine learning e análise estatística espaço-temporal aplicados aos dados do SINAPI podem apoiar a tomada de decisão em políticas públicas de infraestrutura, por meio da previsão de custos da construção civil e da identificação de possíveis distorções decorrentes da utilização de referências de preços entre diferentes regiões do Brasil?
+O problema de pesquisa é a ausência de preço coletado para parte dos insumos representantes
+do SINAPI em várias UFs e a substituição dessas lacunas pelo preço de São Paulo. A
+pergunta que orienta o trabalho é: métodos de aprendizado de máquina conseguem estimar o
+preço local ausente melhor que a regra institucional e, se sim, quanto essa regra altera o custo
+de referência das composições e dos orçamentos de obras públicas?
 
 \subsection{Hipótese}
 
-Parte-se da hipótese de que a aplicação de modelos estatísticos espaço-temporais, técnicas de machine learning e métodos de inteligência artificial aos dados do Sistema Nacional de Pesquisa de Custos e Índices da Construção Civil (SINAPI) é capaz de produzir previsões confiáveis da evolução dos custos da construção civil, contribuindo para o aprimoramento do planejamento orçamentário, da gestão de riscos e da formulação de políticas públicas de infraestrutura. Assume-se ainda que a utilização de valores de referência da região de São Paulo para localidades sem dados próprios pode introduzir distorções nos orçamentos de obras públicas, resultando em potenciais sobrepreços e reduzindo a eficiência na alocação dos recursos públicos.
+A hipótese deste trabalho é que a utilização do preço de São Paulo para substituir a 
+ausência de coleta local não é, em todos os casos, a melhor aproximação disponível. 
+Considerando o amplo histórico de preços do SINAPI e as diferenças observadas entre as 
+unidades da federação, espera-se que métodos de aprendizado de máquina sejam capazes de 
+utilizar as relações temporais, geográficas e entre os próprios insumos para estimar o 
+preço ausente com menor erro. Se essa hipótese se confirmar, será possível demonstrar 
+que informações já existentes no próprio sistema podem contribuir para uma imputação 
+mais próxima do preço que seria observado localmente.
 
 \subsection{Justificativa}
 
-A presente pesquisa justifica-se pela crescente necessidade de utilização de técnicas avançadas de ciência de dados e inteligência artificial para aprimorar a formulação e a implementação de políticas públicas baseadas em evidências. O Sistema Nacional de Pesquisa de Custos e Índices da Construção Civil (SINAPI) constitui a principal referência nacional para orçamentos, fiscalização e acompanhamento de obras públicas, sendo amplamente utilizado por órgãos governamentais, instituições financeiras, empresas e profissionais do setor da construção civil. Apesar de sua relevância estratégica, o uso do SINAPI ainda se concentra predominantemente na consulta de dados históricos, havendo espaço para a exploração de seu potencial analítico e preditivo.
+A relevância do tema deste trabalho pode ser vista tanto do ponto de vista prático como 
+acadêmico.
 
-Do ponto de vista acadêmico, a pesquisa contribui para a integração entre as áreas de ciência de dados, aprendizado de máquina, inteligência artificial, estatística espaço-temporal e administração pública, propondo a aplicação de métodos contemporâneos de análise de dados em uma base pública de grande abrangência nacional. Além disso, busca ampliar a literatura sobre o uso de técnicas preditivas na gestão pública, especialmente no contexto de infraestrutura e investimentos governamentais.
+Do ponto de vista prático, eventuais distorções nos preços utilizados pelo SINAPI podem 
+se refletir diretamente nos orçamentos de referência de obras executadas com recursos 
+públicos, influenciando a estimativa dos valores das contratações e, consequentemente, 
+processos licitatórios, aditivos contratuais e atividades de controle. Entender a 
+dimensão dessas diferenças, identificar se existe uma tendência de subestimação ou 
+superestimação e avaliar formas de reduzi-las utilizando informações que o próprio 
+SINAPI já disponibiliza pode contribuir para o aprimoramento do sistema e apoiar a 
+atuação da CAIXA, do IBGE, dos profissionais responsáveis pela elaboração de orçamentos 
+e dos órgãos de controle.
 
-Sob a perspectiva social e institucional, a pesquisa possui potencial para contribuir com a melhoria da alocação de recursos públicos, o planejamento orçamentário, a antecipação de riscos em contratos de obras e a avaliação de distorções regionais de preços da construção civil. A capacidade de prever tendências de custos pode auxiliar gestores públicos na tomada de decisões mais eficientes, reduzindo desperdícios e aumentando a efetividade das políticas públicas de infraestrutura, habitação e saneamento.
+Sob a perspectiva acadêmica, a pesquisa também propõe um olhar diferente para o problema 
+da estimativa de custos da construção. Em vez de partir diretamente do custo de uma 
+obra, a análise concentra-se no preço de cada insumo dentro de um sistema oficial de 
+referência. Essa abordagem permite trabalhar com uma base histórica ampla, avaliar os 
+modelos em períodos diferentes daqueles utilizados no treinamento e considerar também a 
+incerteza associada às estimativas. Além disso, o trabalho contribui para a discussão 
+sobre imputação de dados ao investigar uma situação em que as ausências não ocorrem de 
+forma aleatória, mas seguem padrões geográficos e persistem ao longo do tempo. Nesse 
+contexto, a forma como os dados são separados para treinamento e avaliação passa a ter 
+papel importante na comparação entre os métodos e na interpretação dos resultados.
 
-A escolha desse recorte tem motivação prática e científica. Prática, em razão da experiência institucional relacionada ao SINAPI e da relevância crescente do tema para a modernização dos processos decisórios no setor público. Científica, pela oportunidade de investigar se modelos de inteligência artificial e machine learning podem gerar previsões confiáveis e produzir evidências sobre possíveis impactos da utilização de referências de preços de uma região em localidades com limitada disponibilidade de dados, contribuindo para o aprimoramento da gestão pública baseada em dados.
+\subsection{Estrutura do Trabalho}
+
+Além desta introdução, este trabalho está estruturado em quatro capítulos. 
+O Capítulo 2 apresenta o funcionamento do SINAPI, os fundamentos teóricos sobre dados 
+ausentes e a literatura relacionada à aplicação de métodos de aprendizado de máquina à 
+estimativa de custos, à imputação de dados e à previsão. O Capítulo 3 descreve a base de 
+dados, as verificações realizadas, os métodos empregados e os protocolos de validação 
+adotados. O Capítulo 4 apresenta e discute os resultados obtidos, enquanto o Capítulo 5 
+reúne as considerações finais e as principais conclusões da pesquisa.

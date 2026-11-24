@@ -12,5 +12,43 @@
 %% periodo; principais resultados alcancados; conclusoes.
 
 \begin{resumo}
-Esta pesquisa investiga a aplicação de modelos estatísticos espaço-temporais, técnicas de machine learning e abordagens de big data sobre os dados do Sistema Nacional de Pesquisa de Custos e Índices da Construção Civil (SINAPI), com o objetivo de apoiar a tomada de decisão em políticas públicas de infraestrutura. O trabalho parte do reconhecimento de que o SINAPI constitui a principal referência nacional de custos da construção civil e apresenta potencial ainda pouco explorado para análises preditivas. A pesquisa busca responder à importância da previsão dos dados do SINAPI e avaliar se a utilização de valores de referência da região de São Paulo para localidades sem observações próprias pode gerar sobrepreço em contratações públicas. A fundamentação teórica aborda conceitos de ciência de dados, inteligência artificial, machine learning, análise espaço-temporal e gestão baseada em evidências para políticas públicas. A proposta contempla a construção e a validação de modelos capazes de identificar tendências, estimar custos futuros e apoiar o planejamento orçamentário de investimentos em habitação, saneamento e infraestrutura. Também são analisados os benefícios da antecipação de riscos relacionados à insuficiência orçamentária, à paralisação de obras e ao desequilíbrio econômico-financeiro de contratos. Os dados utilizados são provenientes da base pública do SINAPI, mantida pela CAIXA Econômica Federal em parceria com o Instituto Brasileiro de Geografia e Estatística (IBGE), abrangendo séries históricas de custos e insumos da construção civil. Como resultado esperado, pretende-se demonstrar que a aplicação de técnicas avançadas de análise de dados pode transformar o SINAPI de uma ferramenta predominantemente consultiva em uma plataforma de inteligência capaz de apoiar decisões estratégicas, aumentar a eficiência da alocação de recursos públicos e fortalecer a formulação de políticas públicas baseadas em evidências.
+O Sistema Nacional de Pesquisa de Custos e Índices da Construção Civil (SINAPI) 
+constitui uma das principais referências para a elaboração de orçamentos de obras e 
+serviços de engenharia. Para obras de infraestrutura de transportes, a referência 
+aplicável é o Sistema de Custos Referenciais de Obras (SICRO). Este trabalho 
+concentra-se no SINAPI e investiga um problema pouco visível para quem utiliza seus 
+preços: quando o Instituto Brasileiro de Geografia e Estatística (IBGE) não obtém 
+amostra mínima para um insumo representante em determinada unidade da federação, não há 
+preço local coletado. Até julho de 2024, essas lacunas eram apresentadas com o preço de 
+São Paulo; desde agosto de 2024, passaram a ser publicadas em branco, embora o custo das 
+composições continue a considerar o valor paulista.
+
+A pesquisa avalia se métodos de aprendizado de máquina conseguem estimar o preço local 
+ausente com menor erro que a regra institucional e mede o efeito dessa escolha sobre os 
+custos de referência. Foi construída uma base histórica com 318 competências mensais 
+efetivamente disponíveis entre janeiro de 2000 e setembro de 2026, com ausência de 
+registros para outubro, novembro e dezembro de 2005, consolidada no Data Lake da CAIXA 
+em ambiente Databricks. A tabela consolidada contém 74.317.246 registros, correspondentes 
+a 51.917.085 células analíticas distintas, definidas pela combinação entre insumo, 
+unidade da federação e competência, após a eliminação das duplicidades decorrentes dos 
+regimes desonerado e não desonerado. Foram identificados 12.012 insumos representantes, 
+distribuídos pelas 27 unidades da federação.
+
+As ausências de coleta local correspondem a 10,15% das células analíticas, totalizando 
+5.268.183 células sem preço local coletado. Entre as lacunas vigentes ao final do período 
+que apresentaram coleta local anterior, a idade mediana é de 85 meses. Adicionalmente, 
+13.194 combinações entre insumo representante e unidade da federação nunca apresentaram 
+coleta local no histórico observado, o equivalente a 4,07% das 324.324 combinações 
+insumo–UF analisadas. A partir dessa camada histórica são construídos os conjuntos 
+nalíticos utilizados nos estudos de imputação, propagação para composições e previsão.
+
+Dez métodos foram comparados, incluindo regras institucionais, completamento de matriz, 
+LightGBM, redes neurais, SAITS e um ensemble, sob protocolos que procuram reproduzir o 
+padrão geográfico e persistente das ausências. Os resultados experimentais atualmente 
+disponíveis indicam que o ensemble reduziu o erro mediano de 16,4% para 11,2%, foi o 
+único modelo no conjunto de confiança e apresentou intervalos calibrados. Propagadas às 
+composições, as imputações indicaram subestimação assimétrica associada à regra de São 
+Paulo, embora o efeito em orçamentos amplos tenha permanecido abaixo de 1,5%. No estudo 
+de previsão, o passeio aleatório não foi superado até três meses, enquanto a agregação 
+pela estrutura do SINAPI reduziu o erro em horizontes de seis a doze meses.
 \end{resumo}

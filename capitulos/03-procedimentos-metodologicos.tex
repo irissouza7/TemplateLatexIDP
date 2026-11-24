@@ -2,45 +2,813 @@
 %% CAPITULO 3 -- PROCEDIMENTOS METODOLOGICOS
 %%=============================================================================
 
-\section{Procedimentos metodológicos}
+\section{PROCEDIMENTOS METODOLÓGICOS}
 
-Esta pesquisa adota uma abordagem quantitativa e aplicada, 
-utilizando dados do Sistema Nacional de Pesquisa de Custos e Índices da Construção Civil 
-(SINAPI) para investigar o potencial de técnicas de ciência de dados e aprendizado 
-de máquina na análise e previsão de custos da construção civil. O estudo será desenvolvido 
-a partir da organização, tratamento e análise das séries históricas disponíveis na base 
-SINAPI, buscando identificar padrões temporais e territoriais que possam contribuir para o 
-planejamento de investimentos e para a tomada de decisão em políticas públicas de 
-infraestrutura. 
+Este capítulo descreve a base de dados, a estrutura do Sistema Nacional de Pesquisa
+de Custos e Índices da Construção Civil (SINAPI) que orienta o desenho empírico e os três
+exercícios de estimação conduzidos: (i) a imputação dos preços coletados ausentes, núcleo do
+trabalho; (ii) a propagação dessas imputações para o custo das composições e de orçamentos
+de referência; e (iii) a previsão de preços e custos de um a doze meses à frente. Revisões
+sistemáticas sobre aprendizado de máquina (ML) em estimativa de custos da construção apontam
+três fragilidades recorrentes nos estudos da área: amostras pequenas de projetos, validação sem
+separação temporal e ausência de quantificação da incerteza (\citeonline{TAYEFEH HASHEMI; EBADATI;
+KAUR, 2020; ELMOUSALAMI, 2020; SHAMIM et al., 2025; WANG et al., 2025}). O desenho
+adotado responde a cada uma delas: usa um painel com quase um milhão de células, impõe
+separação temporal estrita entre treino e avaliação e reporta intervalos de previsão com cobertura
+empírica verificada.
 
-A estratégia metodológica compreenderá etapas de preparação dos dados, 
-análise exploratória, construção de variáveis, aplicação de modelos estatísticos e de 
-aprendizado de máquina e avaliação dos resultados obtidos. Diferentes técnicas poderão ser 
-comparadas por meio de métricas de desempenho adequadas à previsão, permitindo identificar 
-os modelos mais aderentes às características dos dados do SINAPI. O algoritmo e o recorte 
-temporal definitivos serão estabelecidos durante o desenvolvimento da pesquisa, a partir da 
-análise da disponibilidade, qualidade e comportamento das séries históricas utilizadas.
+\subsection{Natureza e delineamento da pesquisa}
 
-\subsection{Tipo e abordagem da pesquisa}
+Trata-se de pesquisa aplicada, quantitativa e de natureza explicativo-preditiva, baseada
+em dados secundários públicos. O delineamento é o de um estudo de comparação de métodos
+(benchmark) sob protocolos de validação controlados: todos os métodos são avaliados nas mesmas
+células, com as mesmas informações disponíveis no momento da previsão, e as diferenças de
+desempenho são submetidas a testes de significância que respeitam a dependência dos erros
+dentro de cada insumo. A unidade de análise é a célula insumo representante × unidade da
+federação (UF) × mês.
 
-A pesquisa possui natureza aplicada e abordagem predominantemente quantitativa, 
-pois busca produzir conhecimento capaz de apoiar problemas concretos relacionados ao 
-planejamento e à gestão de investimentos públicos. A investigação utiliza dados secundários 
-provenientes do SINAPI e combina análise exploratória, métodos estatísticos e técnicas de 
-aprendizado de máquina para avaliar padrões e possibilidades de previsão dos custos da 
-construção civil.
+Esse delineamento difere do usual na literatura de estimativa de custos da construção,
+que tem o projeto como unidade de análise (Seção 2): aqui, a unidade é o preço de cada insumo
+num sistema oficial de referência, o que permite amostras grandes e avaliação fora da amostra no
+tempo.
 
-\subsection{Instrumentos de coleta de dados}
+\subsection{Fonte e construção da base de dados}
 
-A principal fonte de dados será a base do SINAPI, 
-considerada no estudo em suas dimensões temporal e territorial.
- Os dados serão preparados para permitir a identificação de inconsistências, valores ausentes, diferenças entre localidades e evolução dos preços e custos ao longo do tempo, constituindo a base analítica para os experimentos realizados na pesquisa.
 
-\subsection{Procedimentos de análise}
+Os dados utilizados nesta pesquisa provêm dos relatórios mensais do SINAPI publicados 
+pela Caixa Econômica Federal (CAIXA), que mantém o sistema em conjunto com o Instituto 
+Brasileiro de Geografia e Estatística (\citeonline{IBGE}), responsável pela coleta de 
+preços (\citeonline{CAIXA ECONÔMICA FEDERAL, 2026}). O SINAPI constitui referência legal 
+para a elaboração de orçamentos de obras e serviços de engenharia executados com 
+recursos da União (\citeonline{BRASIL, 2013}) e é indicado como parâmetro prioritário para a 
+estimativa de custos de obras pela Lei de Licitações e Contratos (\citeonline{BRASIL, 2021}). 
+Nesse contexto, lacunas ou distorções nos preços utilizados pelo sistema podem se 
+refletir nos orçamentos de referência e nas análises relacionadas à ocorrência de 
+sobrepreço.
 
-A análise será estruturada por meio da comparação entre modelos e seus resultados, 
-utilizando métricas quantitativas compatíveis com problemas de previsão. 
-A seleção definitiva dos algoritmos será realizada após a etapa exploratória e os experimentos iniciais, 
-evitando estabelecer antecipadamente um único método antes de conhecer o comportamento 
-dos dados e permitindo avaliar qual abordagem apresenta melhor desempenho para o 
-problema investigado.
+Para esta pesquisa, foi consolidada uma base histórica abrangendo o período de janeiro 
+de 2000 a setembro de 2026, processada no Data Lake da CAIXA em ambiente Databricks. 
+O intervalo corresponde a 321 competências mensais esperadas, das quais 318 estão 
+efetivamente disponíveis. A auditoria identificou ausência de registros para outubro, 
+novembro e dezembro de 2005. A tabela consolidada contém 74.317.246 registros e, após a 
+eliminação das duplicidades decorrentes dos regimes desonerado e não desonerado, 
+resultou em 51.917.085 células analíticas distintas, definidas pela combinação entre 
+insumo, unidade da federação e competência. A base compreende 12.012 insumos 
+representantes, distribuídos pelas 27 unidades da federação.
+
+A auditoria das competências disponíveis não identificou códigos nulos, descrições ou 
+unidades ausentes, unidades da federação inválidas, origens de preço inválidas ou preços 
+nulos. Das 318 competências disponíveis, 65 não apresentaram ocorrências nas regras 
+estruturais de qualidade avaliadas e 253 apresentaram ao menos um alerta, todos 
+associados à existência de preços menores ou iguais a R\$ 0,01. Essa classificação não 
+significa que as 253 competências tenham sido consideradas inválidas, mas apenas que 
+continham registros que exigiam tratamento antes da construção dos conjuntos analíticos. 
+Ao todo, foram encontradas 83.968 células com preços menores ou iguais a R\$ 0,01, 
+equivalentes a 0,1617% das 51.917.085 células analíticas. 
+
+Apartir da camada consolidada foram identificadas 46.648.902 células com preço coletado 
+localmente e 5.268.183 sem coleta local, estas últimas correspondentes a 10,15% das células analíticas. 
+Para a construção da verdade observada, foram considerados os preços efetivamente coletados localmente. 
+Desse conjunto, 83.967 observações com preços menores ou iguais a R\$ 0,01 foram excluídas, restando 
+46.564.935 observações elegíveis para a etapa seguinte de controle de qualidade.
+
+As mudanças de unidade de medida também foram examinadas. Foram encontrados 41 insumos 
+com mais de uma unidade ao longo do histórico, abrangendo 226.395 células analíticas, 
+das quais 188.198 correspondem a preços coletados. Não foi identificado nenhum caso em 
+que o mesmo insumo apresentasse duas unidades distintas simultaneamente em uma mesma 
+competência. Por esse motivo, essas ocorrências não foram consideradas registros 
+inválidos nem foram excluídas de forma automática. Para preservar a comparabilidade ao 
+longo do tempo, as séries foram tratadas segundo a combinação entre código do insumo, 
+unidade da federação e unidade de medida.
+
+Sobre essa verdade observada foi realizada ainda uma análise de valores extremos. Foram 
+identificadas 191.550 observações superiores a cinco vezes a mediana histórica da 
+respectiva série, correspondentes a 0,4114% das observações elegíveis, e 35.246 
+observações superiores a dez vezes a mediana, equivalentes a 0,0757%. O critério baseado 
+em modified Z-score superior a 5 identificou 1.119.815 observações (2,4048\%), 
+mostrando-se significativamente mais abrangente. Adotou-se, portanto, como regra 
+conservadora de limpeza, a exclusão dos 35.246 preços superiores a dez vezes a mediana 
+da respectiva série, calculada por código do insumo, unidade da federação e unidade de 
+medida. Desses valores extremos, 35.119 pertenciam a séries com 60 ou mais observações, 
+indicando que sua identificação não decorre predominantemente de séries históricas curtas. 
+Após a aplicação das regras de qualidade, a verdade observada final reúne 46.529.689 
+observações.
+
+Como o leiaute e a disponibilidade das informações se modificaram ao longo do período 
+analisado, a pesquisa distingue a base histórica consolidada dos conjuntos analíticos 
+construídos para cada experimento e das janelas específicas utilizadas em treinamento, 
+validação e teste. A partir dessa camada são derivados os conjuntos S1, S4 e S5, de 
+acordo com os critérios próprios de cada estudo. Dessa forma, a base consolidada de 
+51.917.085 células analíticas, as 46.648.902 células com coleta local e as 46.529.689 
+observações que permaneceram na verdade observada após as regras de qualidade constituem 
+níveis distintos da preparação dos dados e não devem ser interpretados como universos 
+equivalentes.
+
+\subsection{Estrutura do SINAPI e identidades verificadas}
+
+O SINAPI organiza os insumos em famílias homogêneas, estruturadas de forma que 
+determinados itens funcionam como referência para a formação dos preços dos demais 
+componentes da família. Em cada unidade da federação, o IBGE realiza a coleta dos 
+preços segundo a metodologia do sistema, e a base histórica permite identificar a 
+origem atribuída a cada preço publicado (\citeonline{CAIXA ECONÔMICA FEDERAL, 2026}). 
+Na base consolidada utilizada nesta pesquisa, foram identificadas três categorias em 
+ORIGEM_PRECO: C (coletado), CR (Coeficiente de Representatividae) e AS (Atribuído de SP). 
+A análise empírica mostrou que C e CR apresentam 
+comportamento compatível com preços locais, enquanto AS identifica situações de 
+ausência de coleta local nas quais é utilizado o preço de São Paulo. Especificamente, 
+99,43% das células classificadas como AS possuíam preço idêntico ao de São Paulo para o 
+mesmo insumo e competência, proporção muito superior à observada para C (20,37\%) e 
+CR (2,91\%). Por essa razão, C e CR são tratadas neste trabalho como observações de 
+preço local, enquanto AS identifica a ausência de coleta local e a aplicação da regra 
+de São Paulo.
+
+A consolidação do histórico de janeiro de 2000 a setembro de 2026 resultou em 
+74.317.246 registros. Como parte desses registros aparece simultaneamente nos 
+regimes desonerado e não desonerado, a unidade analítica utilizada nos estudos 
+de preços foi definida pela combinação entre código do insumo, unidade da federação e 
+competência. A retirada dessa duplicidade resultou em 51.917.085 células analíticas 
+distintas, referentes a 12.012 insumos, nas 27 unidades da federação. O intervalo 
+compreende 321 competências mensais esperadas, das quais 318 estão efetivamente 
+disponíveis, uma vez que não há registros para outubro, novembro e dezembro de 2005.
+
+%% --- Quadro 1 ------------------------------------------------------------ 
+\begin{quadro}[htb] 
+    \caption{Camadas e conjuntos de dados utilizados na pesquisa} 
+    \label{qua:conjuntos-dados} 
+    \centering 
+    \begin{tabular}{p{0.20\textwidth} p{0.48\textwidth} p{0.23\textwidth}} 
+        \toprule \textbf{Conjunto/camada} & \textbf{Conteúdo} & \textbf{Dimensão} \\ 
+        \midrule 
+        Base histórica consolidada 
+        & 
+        Registros históricos dos preços dos insumos, incluindo os regimes desonerado e não desonerado 
+        & 
+        74.317.246 registros 
+        \\ 
+        \addlinespace 
+        Camada analítica 
+        & 
+        Células distintas definidas pela combinação entre insumo, UF e competência, após a retirada das duplicidades 
+        decorrentes dos regimes de oneração & 12.012 insumos; 27 UFs; 318 competências; 51.917.085 células 
+        \\ 
+        \addlinespace 
+        Preços coletados 
+        & 
+        Células com preço coletado localmente, identificadas pelas origens C ou CR 
+        & 
+        46.648.902 células 
+        \\ 
+        \addlinespace 
+        Ausência de coleta local 
+        & 
+        Células sem preço local coletado, identificadas pela origem AS & 5.268.183 células (10,15\%) 
+        \\ 
+        \addlinespace Verdade observada elegível 
+        & 
+        Preços locais após a exclusão de valores menores ou iguais a R\$ 0,01 
+        & 
+        46.564.935 observações 
+        \\ 
+        \addlinespace 
+        Verdade observada final 
+        & 
+        Preços locais após as regras de qualidade e a exclusão de valores superiores a dez vezes a mediana da respectiva série 
+        & 
+        46.529.689 observações 
+        \\ 
+        \addlinespace 
+        S4 -- composições 
+        & 
+        Custos unitários das composições e indicadores associados à utilização do preço de São Paulo 
+        & 
+        A atualizar 
+        \\ 
+        \addlinespace S5 -- covariáveis 
+        & 
+        Variáveis macroeconômicas e indicadores utilizados no estudo de previsão 
+        & 
+        A atualizar 
+        \\ 
+        \bottomrule 
+    \end{tabular} 
+    \fonte{Elaborado pela autora com dados da pesquisa (\the\year).} \end{quadro}
+
+
+Para a construção da verdade observada foram consideradas inicialmente as 46.648.902 
+células classificadas como preços coletados localmente (C ou CR). A auditoria 
+identificou 83.967 dessas observações com preço menor ou igual a R\$ 0,01, que foram 
+retiradas do conjunto de estimação. Após essa etapa, permaneceram 46.564.935 observações 
+elegíveis.
+
+Também foram examinadas possíveis mudanças na unidade de medida. Foram encontrados 41 
+insumos que apresentaram mais de uma unidade ao longo do histórico, envolvendo 226.395 
+células analíticas, das quais 188.198 correspondem a preços coletados. Entretanto, não 
+foi identificado nenhum caso em que um mesmo insumo apresentasse simultaneamente duas 
+unidades diferentes na mesma competência. Essas ocorrências foram, portanto, 
+interpretadas como mudanças históricas de cadastro, e não como registros inválidos. 
+Para evitar a comparação de preços expressos em unidades diferentes, as séries 
+utilizadas nas análises de qualidade foram segmentadas pela combinação entre código do 
+insumo, unidade da federação e unidade de medida.
+
+A análise dos valores extremos foi realizada sobre as 46.564.935 observações elegíveis. 
+Foram identificados 191.550 preços superiores a cinco vezes a mediana histórica da 
+respectiva série (0,4114\%), 35.246 superiores a dez vezes a mediana (0,0757\%) e 
+1.119.815 observações com modified Z-score superior a 5 (2,4048\%). Como o último 
+critério se mostrou consideravelmente mais abrangente e poderia eliminar variações 
+legítimas de preço, adotou-se uma regra mais conservadora, retirando os valores 
+superiores a dez vezes a mediana da série. Após essa etapa, a verdade observada 
+final passou a reunir 46.529.689 observações. Dos 35.246 valores excluídos por 
+esse critério, 35.119 pertenciam a séries com pelo menos 60 observações, reduzindo a 
+possibilidade de que sua identificação decorresse predominantemente de séries históricas 
+muito curtas.
+
+A relação entre representantes de família e os demais insumos pode ser expressa, de 
+forma geral, a partir do preço do representante e do respectivo coeficiente de 
+representatividade. Sendo (p_{j,u,t}) o preço do insumo (j), na unidade da federação 
+(u) e na competência (t), e (r(j)) o representante associado ao insumo (j), 
+considera-se a relação
+
+
+\begin{equation} p_{j,u,t} = \kappa_j c_{j,t} p_{r(j),u,t} \end{equation}
+
+
+\tag{1}em que (c_{j,t}) representa o coeficiente aplicável ao insumo e (\kappa_j) 
+contempla, quando necessário, ajustes decorrentes das características específicas de 
+formação do preço. Essa estrutura é relevante para o desenho da pesquisa porque mostra 
+que parte dos preços publicados pelo sistema possui relação determinística com 
+informações de outros insumos. Consequentemente, observações derivadas não devem ser 
+tratadas como evidências independentes durante o treinamento e a avaliação dos modelos, 
+sob risco de inflar artificialmente a amostra ou permitir vazamento de informação.
+As composições de custos unitários, por sua vez, combinam insumos e, quando aplicável, 
+outras composições segundo seus respectivos coeficientes de consumo. De forma 
+simplificada, o custo da composição (k), na unidade da federação (u) e na competência 
+(t), pode ser representado por
+
+\begin{equation} C_{k,u,t} = \sum_j a_{k,j,t} p_{j,u,t} + \sum_l b_{k,l,t} C_{l,u,t} \label{eq:custo-composicao} \end{equation}
+
+\tag{2}em que (a_{k,j,t}) representa o coeficiente de consumo do insumo (j) e (b_{k,l,t}) 
+o coeficiente associado à utilização de outra composição (l). Essa relação permite 
+avaliar de que forma uma alteração ou imputação realizada no preço de um insumo se 
+propaga até o custo de uma composição e, posteriormente, ao orçamento de referência.
+
+Quando não há coleta local suficiente para determinado preço, a regra institucional 
+pode utilizar o preço de São Paulo como referência. Na base histórica analisada, esse 
+comportamento é identificado pela origem AS, cuja forte coincidência com os preços 
+paulistas foi confirmada empiricamente. Essa regra, denominada neste trabalho regra SP, 
+constitui o baseline institucional contra o qual são comparados os métodos de imputação. 
+O objetivo não é apenas verificar se um modelo consegue produzir menor erro de estimação, 
+mas também avaliar se a substituição da regra SP modifica, de maneira relevante, os 
+custos das composições e dos orçamentos de referência.
+
+
+\subsection{Definição do problema de imputação}
+
+Seja \(y_{i,u,t}=\log p_{i,u,t}\) o logaritmo do preço local do insumo \(i\), 
+na unidade da federação \(u\) e na competência \(t\), e \(m_{i,u,t}\in\{0,1\}\) o 
+indicador de ausência de coleta local, sendo \(m_{i,u,t}=1\) quando não há preço 
+coletado naquela célula. O objetivo é estimar \(y_{i,u,t}\) para as células ausentes 
+utilizando apenas informações disponíveis até a competência \(t\), de forma a evitar 
+o uso de informação futura na estimação.
+
+Na taxonomia de Rubin (\citeonline{1976}) e Little e Rubin (\citeonline{2019}), o mecanismo de ausência observado 
+no SINAPI dificilmente pode ser considerado completamente aleatório 
+(*Missing Completely at Random* -- MCAR). A ocorrência das lacunas apresenta estrutura 
+própria e pode estar associada a características observáveis, como a unidade da federação, 
+o tipo de insumo e seu histórico de disponibilidade, situação compatível com um 
+mecanismo *Missing at Random* (MAR) condicionado a essas informações. Entretanto, 
+não é possível descartar a possibilidade de que a ausência esteja relacionada também a 
+características do próprio mercado local que não são observadas quando a coleta não 
+ocorre, inclusive ao nível de preços que se pretende estimar. Nesse caso, o mecanismo 
+poderia conter componentes *Missing Not at Random* (MNAR).
+
+Os dados históricos reforçam a necessidade de considerar essa estrutura na avaliação 
+dos modelos. Das **51.917.085 células analíticas** disponíveis no período analisado, 
+**5.268.183 (10,15\%) não apresentam coleta local**. Além da frequência, as lacunas 
+apresentam elevada persistência temporal: entre aquelas ainda vigentes ao final do 
+período e para as quais existia alguma coleta local anterior, a **idade mediana é de 85 
+meses**. Adicionalmente, **13.194 combinações entre insumo e unidade da federação nunca 
+apresentaram coleta local** no histórico analisado, o equivalente a **4,07\% das 324.324 
+combinações insumo--UF observadas**. Por essa razão, os protocolos de validação adotados 
+neste trabalho não pressupõem que as ausências sejam independentes ou simplesmente 
+aleatórias. Em vez disso, procuram reproduzir, tanto quanto possível, seu padrão empírico, 
+especialmente sua estrutura espacial e sua persistência ao longo do tempo, evitando que 
+uma validação artificialmente simples produza uma avaliação excessivamente otimista dos 
+métodos de imputação.
+
+\subsection{Análise descritiva}
+
+A análise descritiva tem como objetivo caracterizar a estrutura dos dados e, 
+principalmente, compreender como as ausências de preços locais se distribuem antes 
+da estimação dos modelos. Para isso, são examinados: (i) a evolução, ao longo do tempo, 
+da proporção de células com e sem coleta local; (ii) a distribuição das ausências por 
+unidade da federação, região e, quando disponível no período analisado, por classe de 
+insumo; (iii) a distribuição conjunta das ausências por UF e competência, representada 
+por meio de mapa de calor; (iv) a rigidez dos preços coletados, avaliada pela frequência 
+de variações mensais nulas, positivas e negativas e pela distribuição das variações 
+absolutas de preço; (v) a dispersão do preço de um mesmo insumo entre as unidades da 
+federação; (vi) a frequência com que preços coletados localmente coincidem com o preço 
+de São Paulo na mesma competência; e (vii) a persistência das lacunas, medida pelo 
+número de meses transcorridos desde a última coleta local na respectiva célula.
+
+Na base histórica consolidada, composta por **51.917.085 células analíticas**, 
+foram identificadas **5.268.183 células sem coleta local**, equivalentes a **10,15\% 
+do total observado**. A persistência das ausências mostrou-se particularmente relevante: 
+entre as lacunas vigentes ao final do período para as quais havia registro de coleta 
+anterior, a **idade mediana foi de 85 meses**. Além disso, **13.194 combinações entre 
+insumo e unidade da federação nunca apresentaram coleta local** ao longo do histórico 
+disponível, correspondendo a **4,07\% das 324.324 combinações insumo--UF analisadas**. 
+Esses resultados indicam que a ausência de preços não se limita a ocorrências pontuais, 
+mas inclui lacunas que permanecem por períodos prolongados e situações em que não se 
+observa coleta local em nenhum momento do histórico disponível.
+
+A análise da origem dos preços também contribui para caracterizar esse mecanismo. 
+As células classificadas como **AS**, utilizadas neste trabalho para identificar 
+ausência de coleta local e aplicação da regra de São Paulo, apresentaram coincidência 
+de **99,43\%** com o preço paulista do mesmo insumo e competência. Para as origens **C** 
+e **CR**, tratadas como preços coletados localmente, essa coincidência foi de **20,37\% 
+e 2,91\%**, respectivamente. A diferença entre esses percentuais reforça empiricamente a 
+distinção entre preços locais e valores associados à regra de São Paulo utilizada na 
+construção dos conjuntos analíticos.
+
+As análises de distribuição geográfica, rigidez e dispersão são realizadas somente 
+sobre observações elegíveis em cada período, respeitando alterações de unidade de medida 
+e evitando comparar diretamente séries expressas em unidades diferentes. A auditoria 
+identificou **41 insumos com mudança de unidade ao longo do histórico**, mas não 
+encontrou nenhum caso em que o mesmo insumo apresentasse simultaneamente unidades 
+diferentes em uma mesma competência. Por isso, essas mudanças não foram tratadas como 
+erros, e as séries foram segmentadas por código do insumo, unidade da federação e 
+unidade de medida quando necessário.
+
+A classe de encargos complementares, que reúne itens como alimentação, transporte e 
+equipamentos de proteção associados à mão de obra e que pode apresentar comportamento de 
+preços distinto dos demais insumos, é preservada na análise descritiva. Nos testes de 
+robustez, entretanto, seus resultados são avaliados separadamente, de modo a verificar 
+se características específicas desses itens influenciam o desempenho dos métodos de 
+imputação.
+
+\subsection{Estudo de imputação}
+
+\subsubsection{Métodos de referência institucionais}
+
+Cinco regras relativamente simples são utilizadas como *baselines* para avaliar se os 
+métodos de aprendizado de máquina efetivamente acrescentam capacidade de estimação em 
+relação a alternativas mais tradicionais. A primeira delas, **B0**, corresponde à regra 
+de São Paulo adotada no SINAPI e representa o *status quo* institucional. Nessa regra, 
+quando não há coleta local para o insumo \(i\) na UF \(u\) e na competência \(t\), 
+utiliza-se o preço correspondente de São Paulo:
+
+\begin{equation} \widehat{y}_{i,u,t} = y_{i,\mathrm{SP},t} \label{eq:regra-sp} \end{equation}
+
+
+As regras **B1** e **B2** são inspiradas em procedimentos utilizados pelo U.S. 
+Bureau of Labor Statistics na imputação de preços do índice de preços ao consumidor 
+norte-americano (\citeonline{U.S. BUREAU OF LABOR STATISTICS, 2026}). A regra **B1**, 
+denominada 
+*carry-forward*, utiliza o último preço efetivamente coletado na própria célula. 
+Assim,
+
+\begin{equation} \widehat{y}_{i,u,t} = y_{i,u,\ell} \label{eq:regra-b1} \end{equation}
+
+em que \(\ell<t\) representa a última competência anterior a \(t\) para a qual existe 
+preço local observado. Essa regra pressupõe, portanto, que o último preço conhecido 
+constitui uma aproximação razoável para o preço ausente.
+
+A regra **B2**, denominada *cell-relative*, também parte do último preço coletado na 
+célula, mas procura incorporar a evolução observada do mercado entre \(\ell\) e \(t\). 
+Para isso, o último preço local é atualizado pela mediana da variação, em log, do mesmo 
+insumo nas demais unidades da federação que possuem observações nas duas competências:
+
+\begin{equation} \widehat{y}_{i,u,t} = y_{i,u,\ell} + \operatorname{mediana}_{v \neq u} \left( y_{i,v,t} - y_{i,v,\ell} \right) \label{eq:regra-b2} \end{equation}
+
+Dessa forma, B2 preserva como ponto de partida o último nível de preço observado na 
+própria UF, mas permite que a estimativa acompanhe a variação do mesmo insumo observada 
+nas demais unidades da federação.
+
+A regra **B3** explora a proximidade geográfica. O preço ausente é estimado a partir dos 
+preços disponíveis para o mesmo insumo, na mesma competência, nas demais unidades da 
+federação pertencentes à mesma região geográfica. Essa regra permite avaliar se a 
+informação regional oferece uma referência mais adequada para o preço local do que a 
+utilização direta do preço de São Paulo.
+
+A regra **B4** utiliza uma estrutura aditiva de efeitos fixos em log. A estimativa 
+combina a informação contemporânea do insumo nas demais unidades da federação, 
+representada pelo efeito insumo \(\times\) competência, com o nível relativo da UF 
+dentro da classe do insumo, representado pelo efeito UF \(\times\) classe. Para evitar 
+o uso de informação futura, o componente histórico é estimado exclusivamente a partir 
+das **36 competências anteriores** ao período avaliado.
+
+Um tratamento adicional é necessário quando a combinação insumo--UF nunca apresentou 
+preço local coletado. Esse caso é relevante na base analisada: **13.194 combinações 
+insumo--UF, equivalentes a 4,07\% das 324.324 combinações observadas, não possuem coleta 
+local em nenhuma competência do histórico disponível**. Nessas situações, B1 e B2 não 
+podem utilizar um preço anterior da própria célula. Por isso, recorrem à informação 
+disponível para o mesmo insumo nas demais unidades da federação, utilizando a referência 
+nacional definida para esses casos. Essa distinção é importante porque separa dois 
+problemas de imputação diferentes: a interrupção de uma série que já possui histórico 
+local e a estimação de uma célula para a qual nunca houve observação local.
+
+\subsubsection{Métodos de aprendizado de máquina}
+
+**M1 – Completamento de matriz (SoftImpute).** O método parte da hipótese de que a 
+matriz de preços apresenta uma estrutura aproximadamente de baixa dimensão, de modo 
+que padrões comuns entre insumos e unidades da federação possam ser representados por 
+fatores latentes. Essa abordagem tem fundamento em Candès e Recht (\citeonline{2009}) e está 
+relacionada ao uso de completamento de matriz em painéis com ausência estruturada, 
+como em Athey et al. (\citeonline{2021}). O parâmetro de regularização foi selecionado exclusivamente 
+na janela de validação, sem utilizar informações do período de teste. Na especificação 
+escolhida, adotou-se \(\lambda=0,03\) em relação ao maior valor singular considerado no 
+procedimento de regularização.
+
+**M2 – *Gradient boosting* global (LightGBM).** O segundo método utiliza árvores de 
+decisão combinadas por *boosting* (\citeonline{FRIEDMAN, 2001}) e é ajustado como um único modelo 
+global, compartilhando informação entre insumos e unidades da federação. Essa escolha 
+permite explorar relações não lineares e interações entre características temporais, 
+geográficas e dos próprios insumos. Métodos baseados em árvores apresentam desempenho 
+competitivo em problemas com dados tabulares (\citeonline{GRINSZTAJN; OYALLON; VAROQUAUX, 2022}), 
+inclusive em tarefas de imputação (\citeonline{STEKHOVEN; BÜHLMANN, 2012; JÄGER; ALLHORN; BIESSMANN, 
+2021}), e variantes de *boosting* também vêm sendo utilizadas na estimativa de custos da 
+construção (\citeonline{DAS et al., 2024; ZHANG et al., 2025; İNAN; NARBAEV; HAZIR, 2022}). Em vez de 
+estimar diretamente o nível absoluto do preço, o alvo do modelo é definido em relação ao 
+nível nacional observado para o mesmo insumo, permitindo que o algoritmo aprenda 
+principalmente o diferencial associado ao mercado local. A configuração selecionada na 
+validação utiliza **31 folhas e 600 iterações**.
+
+**M3 – Aprendizado profundo.** Duas arquiteturas são avaliadas. A primeira, **M3a**, 
+é uma rede perceptron multicamadas (MLP) com *embeddings* para as variáveis categóricas 
+(\citeonline{GUO; BERKHAHN, 201}). O modelo recebe, em essência, o mesmo conjunto de informações 
+explicativas utilizado pelo LightGBM, permitindo comparar uma arquitetura neural e uma 
+abordagem baseada em árvores sob condições semelhantes. A segunda, **M3b**, utiliza o 
+SAITS, modelo de imputação de séries temporais multivariadas baseado em mecanismos de 
+autoatenção (\citeonline{DU; CÔTÉ; LIU, 2023}). Nessa representação, cada insumo é tratado como uma 
+série temporal multivariada cujas 27 dimensões correspondem às unidades da federação, 
+utilizando-se uma janela histórica de **24 meses** para a imputação.
+
+**M4 – *Ensemble*.** O último método combina as previsões produzidas pelos modelos 
+individuais e por alguns dos *baselines*. Os pesos são restritos a valores não negativos 
+e à soma igual a um e são estimados por mínimos quadrados exclusivamente na janela de 
+validação, seguindo a lógica de *stacking* (\citeonline{BREIMAN, 1996}). Na especificação selecionada, 
+os pesos obtidos foram **0,321 para LightGBM; 0,301 para SoftImpute; 0,159 para MLP; 
+0,136 para B2; e 0,082 para SAITS**. A regra SP recebeu peso zero, indicando que, na 
+combinação selecionada pela validação, sua inclusão não acrescentou capacidade preditiva 
+suficiente para receber peso positivo. A soma dos pesos informados difere de 1 apenas 
+por arredondamento. Combinações de modelos com estruturas distintas são particularmente 
+interessantes neste problema porque permitem reunir evidências provenientes de relações 
+espaciais, temporais e não lineares em uma única estimativa.
+
+As variáveis explicativas utilizadas no M2 e no M3a são construídas de forma que estejam 
+disponíveis no momento da estimação da célula \((i,u,t)\), evitando o uso de informação 
+futura. Entre elas estão: o nível nacional do preço do insumo na competência \(t\), 
+calculado sem a própria UF, e o número de unidades da federação observadas; o nível 
+regional; o preço de São Paulo; o último preço local coletado e a idade dessa observação; 
+a variação pareada observada desde a última coleta, relacionada à regra B2; o nível 
+relativo histórico da UF para o grupo do insumo; a dispersão histórica dos preços do 
+mesmo insumo entre as unidades da federação; a frequência histórica de coincidência com 
+o preço de São Paulo; e as variáveis categóricas correspondentes à UF, à região, à classe, 
+à unidade de medida e ao código do insumo.
+
+A construção dessas variáveis considera ainda características identificadas na análise 
+da base histórica. Em particular, a elevada persistência das ausências torna relevantes 
+tanto a idade da última observação quanto a existência, ou não, de histórico local para 
+a célula. Na base analisada, **13.194 combinações insumo–UF, equivalentes a 4,07\% das 
+combinações observadas, nunca apresentaram coleta local**, enquanto, entre as lacunas 
+vigentes ao final do período que possuíam coleta anterior, a **idade mediana é de 85 
+meses**. Essas características justificam a inclusão explícita de variáveis relacionadas 
+à disponibilidade e à idade do histórico local nos modelos.
+
+\subsubsection{Protocolos de validação}
+
+
+Como o preço local verdadeiro não é observado justamente nas células em que a coleta está ausente, a qualidade das 
+imputações não pode ser avaliada diretamente sobre essas lacunas. A estratégia adotada consiste, portanto, em ocultar 
+artificialmente preços efetivamente coletados e comparar as estimativas produzidas pelos métodos com os valores que 
+foram retirados. Nesse procedimento, a forma como as células são ocultadas é particularmente importante. Máscaras construídas 
+de maneira completamente aleatória podem produzir um problema mais simples do que aquele encontrado na prática e, com isso, 
+superestimar o desempenho dos métodos quando as ausências reais apresentam estrutura espacial e persistência temporal 
+(\citeonline{JÄGER; ALLHORN; BIESSMANN, 2021; DU; WANG et al., 2024}).
+
+Essa preocupação é especialmente relevante para o SINAPI. Na base histórica analisada, 5.268.183 das 51.917.085 células 
+analíticas (10,15\%) não apresentam coleta local. Além disso, a ausência frequentemente se prolonga no tempo: entre as lacunas 
+vigentes ao final do período que possuíam alguma coleta anterior, a idade mediana é de 85 meses. Há ainda 13.194 combinações 
+insumo--UF, equivalentes a 4,07% das 324.324 combinações observadas, que nunca apresentaram coleta local no histórico disponível. 
+Dessa forma, os protocolos de validação procuram representar não apenas a quantidade de valores ausentes, mas também sua 
+persistência e sua distribuição entre as unidades da federação.
+
+Foram definidos quatro protocolos de validação, apresentados no Quadro~\ref{qua:protocolos-imputacao}.
+
+%% --- Quadro 2 ------------------------------------------------------------ 
+\begin{quadro}[htb] 
+    \caption{Protocolos de validação do estudo de imputação} 
+    \label{qua:protocolos-imputacao} 
+    \centering 
+    \begin{tabular}{p{0.20\textwidth} p{0.72\textwidth}} 
+        \toprule 
+        \textbf{Protocolo} & \textbf{Descrição} 
+        \\ 
+        \midrule 
+        V1-real (principal) 
+        & 
+        Reproduz o padrão empírico das ausências reais, considerando sua distribuição entre UFs e sua persistência temporal. 
+        O histórico disponível é ajustado segundo a distribuição empírica da idade das lacunas, incluindo situações equivalentes 
+        às células que nunca apresentaram coleta local. 
+        \\ 
+        \addlinespace 
+        V1-12m (sensibilidade) 
+        & 
+        Mantém a ocultação em bloco, mas preserva o histórico anterior ao bloco, representando situações de ausência 
+        relativamente recente e permitindo avaliar a influência da disponibilidade de observações locais anteriores. 
+        \\ 
+        \addlinespace V3-MCAR (referência) 
+        & 
+        Oculta aleatoriamente uma fração equivalente de células observadas, sem reproduzir deliberadamente a estrutura espacial 
+        ou a persistência temporal das ausências reais. 
+        \\ 
+        \addlinespace 
+        V2-natural 
+        & 
+        Utiliza situações em que uma célula anteriormente sem coleta local volta a apresentar preço coletado, permitindo 
+        uma avaliação complementar baseada em ausências ocorridas naturalmente na própria base. 
+        \\ 
+        \bottomrule 
+    \end{tabular} 
+    \fonte{Elaborado pela autora (\the\year).} \end{quadro}
+
+    
+Em todos os protocolos, a estimação da célula ((i,u,t)) utiliza somente informações que estariam disponíveis até a competência (t). 
+Essa restrição é adotada tanto na construção das variáveis explicativas quanto no treinamento dos modelos, de forma a 
+impedir vazamento de informação futura. Os modelos que dependem do histórico da própria célula também recebem informações 
+compatíveis com o cenário representado pelo protocolo de validação. Assim, quando o protocolo representa uma lacuna persistente, 
+o histórico é ajustado para refletir a idade das ausências reais; nos cenários de lacunas recentes, preserva-se uma quantidade 
+maior de informação local anterior.
+
+Essa distinção é importante porque os métodos não dependem igualmente do histórico da célula. Regras como carry-forward e 
+cell-relative utilizam diretamente o último preço local observado e, portanto, tendem a se beneficiar de lacunas curtas. 
+O mesmo ocorre, ainda que de maneira mais flexível, com modelos como LightGBM e MLP, que utilizam a idade e o último preço 
+observado entre suas variáveis explicativas. Por essa razão, o envelhecimento artificial do histórico deve acompanhar o 
+protocolo avaliado, evitando que um método tenha acesso a informações mais recentes do que aquelas normalmente disponíveis em 
+uma lacuna real.
+
+A seleção de hiperparâmetros e dos pesos do ensemble é realizada exclusivamente na janela de validação, enquanto a comparação 
+final dos métodos utiliza uma janela de teste temporalmente posterior e não empregada na seleção dos modelos. Essa separação 
+preserva a natureza fora da amostra da avaliação. Sempre que são utilizadas diferentes sementes para a geração das máscaras 
+artificiais, os mesmos blocos ocultados são apresentados aos métodos comparados, assegurando que diferenças de desempenho não 
+decorram de amostras de teste distintas.
+
+A informação sobre famílias de insumos merece tratamento específico porque sua disponibilidade não é uniforme ao longo de todo o 
+histórico de janeiro de 2000 a setembro de 2026. Quando uma variável explicativa depende da estrutura de famílias, sua utilização 
+é limitada ao período em que essa informação está disponível ou é submetida a análise específica de robustez. Dessa forma, o 
+histórico ampliado é aproveitado para caracterizar preços e ausências sem pressupor que atributos cadastrais publicados em 
+períodos mais recentes estejam necessariamente disponíveis com a mesma qualidade desde o início da série.
+
+\subsubsection{Métricas e testes}
+
+Seja \(e=\widehat{y}-y\) o erro de estimação na escala logarítmica. Como os modelos são avaliados nessa escala, o erro relativo 
+na escala original dos preços é obtido por \(\exp(e)-1\). Dessa forma, o erro percentual absoluto é definido como
+
+\[
+\mathrm{APE}
+=
+\left|\exp(e)-1\right|.
+\]
+
+A principal métrica de desempenho é o **erro percentual absoluto mediano (MdAPE)**, escolhido por ser menos sensível a valores 
+extremos e, portanto, adequado à heterogeneidade observada nos preços dos insumos. Como medidas complementares, são reportados 
+o **erro percentual absoluto médio (MAPE)**, a **raiz do erro quadrático médio na escala logarítmica (RMSE-log)**, o **viés 
+mediano**, definido por
+
+\[
+\operatorname{Mediana}\left(\exp(e)-1\right),
+\]
+
+e o **percentil 90 do APE (P90-APE)**. Em conjunto, essas métricas permitem avaliar não apenas o erro típico das estimativas, 
+mas também sua sensibilidade a erros maiores e a existência de tendência sistemática de superestimação ou subestimação.
+
+Nem todos os métodos conseguem produzir estimativas para todas as células avaliadas. A regra de São Paulo, por exemplo, 
+depende da disponibilidade do preço correspondente nessa UF, enquanto métodos baseados no histórico da própria célula, como B1 
+e B2, podem não produzir diretamente uma estimativa quando não existe observação local anterior. Essa situação é particularmente 
+relevante na base analisada, na qual **13.194 combinações insumo--UF, correspondentes a 4,07\% das combinações observadas, nunca 
+apresentaram coleta local**. Por essa razão, além das métricas calculadas sobre todas as células em que cada método produz uma 
+estimativa, os resultados são apresentados também para uma **amostra comum**, formada exclusivamente pelas células para as quais 
+todos os métodos comparados produziram previsão. Essa segunda avaliação permite comparar os erros sem que diferenças de cobertura 
+sejam confundidas com diferenças de desempenho preditivo.
+
+A incerteza associada às diferenças de desempenho é avaliada por **bootstrap por conglomerados**, utilizando o insumo como 
+unidade de reamostragem. Em cada uma das **2.000 réplicas**, são reamostrados insumos completos, preservando conjuntamente as 
+observações correspondentes às diferentes unidades da federação e competências. Essa estratégia mantém, dentro de cada 
+conglomerado, a dependência existente entre os erros associados ao mesmo insumo e permite construir a distribuição empírica das 
+diferenças de erro entre os métodos. A comparação do *ensemble* com cada alternativa é realizada a partir das diferenças de perda 
+obtidas nas reamostragens, em uma abordagem relacionada à lógica de comparação de capacidade preditiva de Diebold e Mariano (\citeonline{1995}), 
+mas adaptada à estrutura de painel do problema.
+
+Além das comparações par a par, utiliza-se o **Model Confidence Set (MCS)** de Hansen, Lunde e Nason (\citeonline{2011}) para identificar 
+o conjunto de métodos cujo desempenho não pode ser estatisticamente distinguido do melhor modelo ao nível de confiança 
+de **90\%**. O procedimento emprega o mesmo esquema de *bootstrap* por insumo, mantendo a estrutura de dependência utilizada 
+nas demais comparações. Dessa forma, a análise não se limita à ordenação pontual dos modelos pelas métricas de erro, mas 
+considera também a incerteza estatística associada às diferenças observadas entre eles.
+
+\subsubsection{Quantificação da incerteza}
+
+Para cada imputação produzida pelo *ensemble*, é construído um intervalo de previsão por meio de **predição conformal dividida 
+(*split conformal prediction*)** (VOVK; GAMMERMAN; SHAFER, 2005; LEI et al., 2018). O objetivo é complementar a estimativa 
+pontual do preço ausente com uma medida de incerteza, permitindo avaliar não apenas qual valor o modelo estima, mas também 
+a faixa de valores compatível com os erros observados na etapa de calibração.
+
+Os intervalos são calibrados a partir dos resíduos absolutos obtidos na janela de validação. Como a dificuldade de imputação 
+pode variar de acordo com a localização geográfica e com o tempo decorrido desde a última coleta local, os resíduos são agrupados 
+pela combinação entre **região e faixa de idade da lacuna**, seguindo uma estratégia do tipo *Mondrian conformal*. 
+Essa estratificação é particularmente relevante neste estudo, uma vez que as ausências apresentam elevada persistência temporal: 
+entre as lacunas vigentes ao final do período que possuíam coleta anterior, a idade mediana observada foi de **85 meses**. 
+Para evitar estimativas instáveis do quantil em estratos com poucas observações, quando um grupo região × idade possui menos de 
+**50 resíduos**, utiliza-se como alternativa uma calibração mais ampla, baseada apenas na faixa de idade da lacuna.
+
+Para um nível nominal de cobertura \(1-\alpha\), o intervalo associado à observação pertencente ao grupo \(g\) é definido por
+
+\begin{equation} \left[ \widehat{y}_{i,u,t} - \widehat{q}_{g}, \; \widehat{y}_{i,u,t} + \widehat{q}_{g} \right] \label{eq:intervalo-conformal} \end{equation}
+
+em que \(\widehat{q}_{g}\) corresponde ao quantil conformal dos resíduos absolutos do grupo de calibração. Para \(n_g\) resíduos 
+disponíveis no grupo \(g\), utiliza-se a posição
+
+\begin{equation} k_g = \left\lceil (n_g + 1)(1-\alpha) \right\rceil \label{eq:quantil-conformal} \end{equation}
+
+limitada ao tamanho da amostra quando necessário, e \(\widehat{q}_{g}\) é definido pelo \(k_g\)-ésimo menor resíduo absoluto. 
+Essa correção finita evita que o quantil seja tratado apenas como um percentil amostral convencional.
+
+A calibração dos intervalos é avaliada separadamente em cada protocolo de validação por meio da **cobertura empírica**, isto é, 
+pela proporção de preços verdadeiros que se encontram dentro do intervalo produzido pelo modelo. A cobertura observada é 
+comparada ao nível nominal \(1-\alpha\), considerando exclusivamente as células para as quais foi possível construir um 
+intervalo. Além da cobertura, a largura dos intervalos é acompanhada, pois intervalos excessivamente amplos podem alcançar a 
+cobertura desejada sem fornecer informação suficientemente precisa sobre o preço ausente.
+
+No protocolo **V2-natural**, é avaliada adicionalmente a **inferência conformal adaptativa 
+(*Adaptive Conformal Inference* -- ACI)** de Gibbs e Candès (2021). Essa abordagem permite ajustar dinamicamente o nível de 
+calibração à medida que novos resultados se tornam disponíveis, característica relevante quando a distribuição dos erros pode se 
+modificar ao longo do tempo. A atualização é realizada mensalmente segundo
+
+\begin{equation} \alpha_{t+1} = \alpha_t + \gamma \left( \alpha - \operatorname{erro}_t \right), \qquad \gamma = 0{,}05 \label{eq:aci} \end{equation}
+
+com \(\gamma=0,05\), em que \(\operatorname{erro}_t\) indica se o valor observado na competência \(t\) ficou fora do intervalo previsto. Dessa forma, quando a cobertura recente fica abaixo do desejado, o procedimento ajusta a calibração para tornar os intervalos subsequentes mais conservadores; quando a cobertura supera sistematicamente o nível nominal, o ajuste ocorre no sentido contrário.
+
+\subsubsection{Aplicação às lacunas reais}
+
+Por fim, os modelos são aplicados às **lacunas reais identificadas na base histórica**, isto é, às células em que não houve 
+coleta de preço local. No período de janeiro de 2000 a setembro de 2026, foram identificadas **5.268.183 células sem coleta 
+local**, correspondentes a **10,15\% das 51.917.085 células analíticas**. Esse histórico é utilizado para caracterizar a 
+frequência e, principalmente, a persistência das ausências, incluindo situações em que a célula permanece sem coleta por longos 
+períodos e casos em que nunca houve preço local observado. A aplicação final dos modelos, entretanto, é realizada apenas 
+sobre as lacunas pertencentes à janela definida para o estudo de imputação, respeitando a disponibilidade das variáveis 
+necessárias e os critérios de elegibilidade estabelecidos na preparação dos dados. Para cada célula elegível são produzidos o 
+**preço local imputado**, o **intervalo de previsão de 90\%** e, quando disponível, o **preço de São Paulo na mesma competência**, 
+utilizado como referência para comparação com a regra institucional.
+
+\subsection{Propagação para composições e orçamentos}
+
+Para avaliar como a regra de São Paulo se propaga para os custos de referência, são construídos dois cenários para as 
+células sem coleta local elegíveis ao estudo. No **cenário SP**, essas células recebem o preço do mesmo insumo em São Paulo, 
+reproduzindo a regra institucional utilizada como referência. No **cenário ML**, os preços ausentes são substituídos pelas 
+estimativas produzidas pelo *ensemble*. Quando o preço de um insumo é derivado do preço de outro item de referência, a imputação 
+é propagada segundo a relação apresentada na Equação~\ref{eq:preco-insumo}. Em ambos os cenários, somente células sem coleta 
+local são preenchidas; **preços efetivamente coletados e publicados não são substituídos pelos modelos**.
+
+A partir dos preços obtidos em cada cenário, os custos das composições são recalculados pela estrutura completa de dependências 
+apresentada na Equação~\ref{eq:custo-composicao}. O cálculo considera tanto os insumos diretamente utilizados em cada serviço 
+quanto outras composições incorporadas de forma recursiva. Para tornar esse processamento viável em larga escala, a estrutura é 
+representada por matrizes esparsas. O cenário SP também funciona como referência de validação do recálculo, uma vez que os custos 
+reconstruídos a partir dessa regra devem permanecer próximos daqueles produzidos pela sistemática institucional.
+
+A diferença relativa entre os dois cenários para a composição \(k\), na unidade da federação \(u\) e na competência \(t\), é 
+definida por
+
+\begin{equation} \delta_{k,u,t} = \frac{C^{SP}_{k,u,t}} {C^{ML}_{k,u,t}} - 1 \label{eq:delta-custos} \end{equation}
+
+Valores positivos de \(\delta_{k,u,t}\) indicam que o custo calculado pela regra SP é superior ao obtido com a imputação do 
+*ensemble*, enquanto valores negativos indicam o contrário. Essa diferença é analisada por unidade da federação, por grupo 
+de composições e pela participação do custo associada ao uso de preços de São Paulo (\%AS), permitindo verificar se a divergência 
+entre os cenários se concentra em determinados mercados ou tipos de serviço.
+
+É importante observar que \(\delta_{k,u,t}\) **não mede diretamente o erro da regra SP em relação ao preço verdadeiro**, 
+pois este não é observado nas células sem coleta local. A medida expressa a divergência entre o cenário institucional e o 
+cenário construído com as estimativas do *ensemble* e, portanto, também está sujeita à incerteza das imputações. Essa limitação 
+é tratada de duas formas. Primeiro, a incerteza das estimativas é propagada aos custos por meio de **simulação de Monte Carlo 
+com 100 réplicas**, utilizando resíduos obtidos na validação e condicionados à faixa de idade da lacuna. Os resíduos são 
+centrados na mediana de cada faixa e avaliados sob duas estruturas extremas de dependência: erros independentes entre células 
+e erros perfeitamente correlacionados dentro de cada insumo. Esses dois cenários permitem avaliar a sensibilidade dos resultados 
+a diferentes hipóteses sobre a correlação dos erros de imputação.
+
+Como segunda análise de sensibilidade, as imputações são corrigidas pelo viés mediano observado para o próprio *ensemble* na 
+validação, também de acordo com a faixa de idade da lacuna. Esse procedimento permite verificar se as conclusões sobre os custos 
+permanecem estáveis quando se considera uma eventual tendência sistemática de superestimação ou subestimação do modelo.
+
+Como a estrutura de formação dos custos é linear nos preços dos insumos, a diferença entre os cenários também pode ser decomposta 
+segundo a contribuição de cada insumo:
+
+\begin{equation} C^{SP} - C^{ML} = R\left(p^{SP} - p^{ML}\right), \qquad R = (I-B)^{-1}A \label{eq:decomposicao-custos} \end{equation}
+
+Nessa expressão, \(A\) representa os requisitos diretos de insumos, \(B\) representa as relações entre composições e \(R\) 
+corresponde à matriz de requisitos totais de insumos resultante da árvore de dependências. Essa decomposição permite 
+identificar quais insumos explicam a maior parcela da diferença entre os cenários em cada unidade da federação, conectando a 
+imputação realizada no nível do preço ao efeito observado no custo final das composições.
+
+Além da análise no nível das composições, o efeito é avaliado em **três orçamentos-tipo estilizados**, representativos de 
+edificação habitacional, saneamento e drenagem e pavimentação urbana. Esses orçamentos são formados por cestas de composições e 
+permitem observar se diferenças detectadas em insumos ou serviços específicos permanecem relevantes quando agregadas em 
+estruturas mais próximas de um orçamento de obra. Quando mantida a competência de referência originalmente definida no desenho 
+experimental, as cestas são normalizadas para igual custo em São Paulo em junho de 2025 e posteriormente avaliadas nas 27 
+unidades da federação.
+
+\subsection{Estudo de previsão}
+
+O estudo complementar de previsão avalia horizontes de **1, 3, 6 e 12 meses** e considera dois níveis de análise: o preço dos 
+insumos com coleta local e o custo das composições. Em ambos os casos, a variável de interesse é modelada em escala logarítmica. 
+Para os insumos, cada série é definida pela combinação entre insumo, unidade da federação e unidade de medida, de modo a 
+respeitar as mudanças de unidade identificadas no histórico. Para as composições, utiliza-se uma amostra estratificada de 
+serviços nas 27 unidades da federação, permitindo avaliar se os ganhos observados na previsão dos preços também se mantêm quando 
+esses preços são agregados na estrutura de custos.
+
+A avaliação segue um esquema de **origem móvel (*rolling origin*)** (\citeonline{TASHMAN, 2000}). Em cada origem, os modelos utilizam 
+exclusivamente as informações disponíveis até aquela competência e produzem previsões para os horizontes seguintes. Esse desenho 
+preserva a ordem temporal dos dados e evita que informações futuras sejam utilizadas direta ou indiretamente no treinamento. 
+As origens de avaliação são distribuídas ao longo do período de teste e permitem observar se o desempenho dos métodos permanece 
+estável em diferentes momentos do histórico, em vez de depender de uma única divisão entre treinamento e teste.
+
+São comparadas inicialmente quatro referências simples: **passeio aleatório (RW)**, que mantém como previsão o último valor 
+disponível; **deriva**, estimada a partir da variação observada nos 12 meses anteriores; **sazonal ingênuo**, que utiliza como 
+referência o valor correspondente do ciclo anual anterior; e **indexação pelo INCC-M**, incluída por representar uma referência 
+de reajuste relacionada aos custos da construção.
+
+A essas referências são acrescentados métodos estatísticos e de aprendizado de máquina. O **AutoETS** utiliza modelos de 
+suavização exponencial em espaço de estados (\citeonline{HYNDMAN et al., 2008}). O **LightGBM global direto** é ajustado conjuntamente às 
+diferentes séries e utiliza defasagens dos preços, características hierárquicas e variáveis macroeconômicas do conjunto S5. A 
+opção por um modelo global permite compartilhar informação entre séries relacionadas, seguindo a literatura de previsão global 
+de séries temporais (\citeonline{MONTERO-MANSO; HYNDMAN, 2021; MAKRIDAKIS; SPILIOTIS; ASSIMAKOPOULOS, 2022}). Indicadores macroeconômicos são 
+incluídos para avaliar se ajudam a antecipar movimentos dos custos da construção além da informação contida no próprio histórico 
+de preços.
+
+São avaliadas também duas arquiteturas de aprendizado profundo: **N-HiTS** (\citeonline{CHALLU et al., 2023}) e **LSTM** 
+(\citeonline{HOCHREITER; SCHMIDHUBER, 1997}). O primeiro foi desenvolvido para previsão multi-horizonte e permite representar 
+componentes da série em diferentes escalas temporais; o segundo utiliza recorrência para representar dependências ao longo do 
+tempo. Adicionalmente, é avaliado o modelo fundacional Chronos-Bolt, utilizado em configuração zero-shot, isto é, sem treinamento 
+específico sobre as séries do SINAPI. Essa comparação permite verificar se um modelo pré-treinado em grande variedade de séries 
+temporais consegue competir com métodos ajustados especificamente aos dados da pesquisa. Por fim, é avaliado um modelo híbrido no 
+qual o LightGBM aprende o desvio em relação à projeção produzida pelo INCC-M, combinando uma referência econômica conhecida com 
+um componente não linear aprendido a partir dos dados.
+
+No estudo das composições, a previsão direta do custo é comparada a estratégias que exploram explicitamente a estrutura do SINAPI. 
+Na estratégia bottom-up, os preços dos insumos são previstos inicialmente e, em seguida, agregados conforme sua participação no 
+custo da composição. A variação prevista do custo da composição (k) pode ser representada por
+
+\begin{equation} 
+    \Delta \log \widehat{C}_{k} 
+    = 
+    \log 
+    \left[ 
+        \sum_{j} 
+        s_{k,j} 
+        \exp 
+        \left( 
+            \Delta \log \widehat{p}_{j} 
+            \right) 
+            \right] 
+            \label{eq:previsao-bottom-up} 
+        \end{equation}
+
+em que (s_{k,j}) representa a participação do insumo (j) no custo da composição (k) na origem da previsão. Essa abordagem 
+permite verificar se a previsão dos componentes elementares produz resultados melhores do que a previsão direta do custo 
+agregado.
+
+A segunda estratégia estrutural utiliza reconciliação por mínimos quadrados ponderados (WLS). Os pesos são definidos a partir 
+do inverso do erro quadrático observado para cada nível da estrutura em origens anteriores, aproximando a versão diagonal do 
+método MinT proposto por Wickramasuriya, Athanasopoulos e Hyndman (2019). O objetivo é produzir previsões coerentes entre os 
+diferentes níveis de agregação sem assumir que um único nível da estrutura seja necessariamente o mais preciso em todos os 
+horizontes.
+
+A principal métrica de comparação é o MAE relativo ao passeio aleatório (RelMAE) (DAVYDENKO; FILDES, 2013). O passeio aleatório 
+é utilizado como referência porque parte relevante dos preços apresenta períodos de estabilidade, situação em que medidas 
+percentuais convencionais podem produzir comparações pouco informativas. Valores de RelMAE inferiores a 1 indicam desempenho 
+superior ao passeio aleatório, enquanto valores superiores a 1 indicam desempenho inferior. A comparação é complementada pela 
+acurácia direcional, que verifica a capacidade do modelo de antecipar corretamente aumentos e reduções de preço.
+
+A incerteza das diferenças de desempenho é avaliada por bootstrap por insumo, preservando conjuntamente as previsões 
+correspondentes às diferentes unidades da federação e horizontes. O Model Confidence Set (MCS) é utilizado como análise 
+complementar para identificar os modelos estatisticamente indistinguíveis do melhor desempenho observado. Para o LightGBM, 
+são produzidos ainda intervalos de previsão conformais, calibrados exclusivamente com resíduos de origens anteriores à previsão 
+avaliada. Dessa forma, tanto as estimativas pontuais quanto os intervalos preservam a restrição temporal adotada em todo o 
+desenho experimental.
+        
+\subsection{Reprodutibilidade}
+
+O processamento dos dados e a execução dos experimentos foram realizados em ambiente **Databricks**, sobre a camada histórica 
+consolidada no Data Lake da CAIXA, combinando consultas em SQL e rotinas desenvolvidas em **Python 3.12**. As etapas de 
+preparação, análise e modelagem utilizam, conforme a finalidade de cada experimento, as bibliotecas **Polars, DuckDB, LightGBM, 
+scikit-learn, PyTorch, PyPOTS, StatsForecast e NeuralForecast**. Sempre que aplicável, são utilizadas sementes aleatórias fixas, 
+de modo a favorecer a reprodutibilidade dos experimentos.
+
+As tabelas e figuras apresentadas neste trabalho são produzidas por rotinas específicas do projeto de pesquisa, mantendo-se a 
+identificação do código responsável por sua geração. Os artefatos resultantes são armazenados separadamente da camada histórica 
+consolidada, preservando a distinção entre os dados de origem, os conjuntos analíticos derivados e os resultados produzidos pelos 
+experimentos. A padronização visual dos gráficos é mantida ao longo do trabalho, de forma a assegurar consistência na apresentação 
+e facilitar a comparação entre os diferentes resultados.
+
+A camada consolidada utilizada como fonte dos dados é preservada **somente para leitura durante as etapas de estimação**, 
+de forma que os valores obtidos pelos modelos não substituam os preços históricos. As imputações são armazenadas separadamente 
+e identificadas pelo método utilizado, pela competência e, quando aplicável, pelos respectivos intervalos de previsão. 
+Essa separação permite manter a rastreabilidade entre o valor originalmente disponível no SINAPI e aquele produzido por cada 
+método, além de possibilitar a reprodução das análises sem modificar a informação histórica utilizada como referência.

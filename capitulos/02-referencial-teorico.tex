@@ -7,142 +7,167 @@
 
 \section{Referencial teórico}
 
-A transformação digital do setor público tem ampliado significativamente a disponibilidade de bases de dados governamentais capazes de subsidiar processos decisórios baseados em evidências. Nesse contexto, a Ciência de Dados, a Inteligência Artificial e as técnicas de Big Data assumem papel estratégico ao possibilitar a extração de conhecimento a partir de grandes volumes de dados estruturados e não estruturados. No setor da construção civil, essa realidade torna-se especialmente relevante diante da crescente complexidade dos investimentos públicos em infraestrutura e da necessidade de aprimorar mecanismos de planejamento, monitoramento e controle de custos. O Sistema Nacional de Pesquisa de Custos e Índices da Construção Civil (SINAPI), mantido pela Caixa Econômica Federal em parceria com o Instituto Brasileiro de Geografia e Estatística (IBGE), constitui a principal referência nacional para elaboração de orçamentos de obras públicas e apresenta características que o qualificam como uma importante fonte de dados para aplicações de Inteligência Artificial voltadas ao apoio à formulação e avaliação de políticas públicas.
+Este capítulo reúne os fundamentos do trabalho em cinco blocos: o funcionamento do SINAPI 
+e seu papel no orçamento de obras públicas; a teoria de dados ausentes e a imputação em 
+estatísticas oficiais de preços; a literatura de aprendizado de máquina na estimativa de 
+custos da construção civil; os métodos de aprendizado empregados; e as ferramentas de 
+quantificação da incerteza e de comparação de modelos. Uma seção final trata da previsão 
+de preços e índices de construção, tema do estudo complementar.
 
-\section{Políticas Públicas Baseadas em Evidências e Ciência de Dados}
+\section{O SINAPI e o orçamento de obras públicas}
 
-A utilização de dados na formulação de políticas públicas ganhou relevância nas últimas décadas com o avanço da capacidade de armazenamento e processamento computacional. Segundo \citeonline{janssen2017bigdata}, a qualidade das decisões orientadas por dados depende da qualidade dos dados disponíveis, da governança informacional e da capacidade institucional de transformar informações em conhecimento aplicável à gestão pública.
+O SINAPI é um sistema de referência de preços e custos mantido pela CAIXA, responsável 
+pela base técnica de engenharia (especificação dos insumos e composições), e pelo IBGE, 
+responsável pela pesquisa mensal de preços e salários nas 27 UFs (\citeonline{CAIXA ECONÔMICA FEDERAL, 
+2026}). Três elementos de sua metodologia são essenciais para este trabalho. O primeiro é 
+a organização dos insumos em famílias homogêneas: em cada família, apenas o insumo 
+representante tem o preço pesquisado, e os preços dos demais insumos são obtidos 
+multiplicando-se o preço do representante por um coeficiente de representatividade. 
+O segundo são as composições de custo unitário, que descrevem cada serviço como uma 
+combinação de insumos e de outras composições com coeficientes de consumo e produtividade 
+definidos nacionalmente; o custo da composição numa UF resulta da aplicação desses 
+coeficientes aos preços locais. O terceiro é o tratamento das lacunas de coleta: quando 
+o IBGE não obtém amostra mínima para um representante numa UF, o sistema recorre ao preço 
+de São Paulo. Até julho de 2024 essa atribuição aparecia no próprio preço do insumo 
+(origem “AS”); a partir do relatório consolidado de agosto de 2024, o preço do insumo 
+passou a ser publicado em branco, mas o custo das composições continuou a ser calculado 
+com o valor paulista (\citeonline{BRASIL. MINISTÉRIO DA GESTÃO E DA INOVAÇÃO EM SERVIÇOS PÚBLICOS, 
+2025}).
 
-Nesse contexto, o conceito de Big Data ultrapassa a simples acumulação de grandes volumes de informações e passa a envolver mecanismos capazes de gerar valor público por meio da análise de dados. A aplicação dessas técnicas permite identificar padrões, tendências e anomalias que dificilmente seriam percebidos por métodos convencionais de análise.
+O peso institucional do sistema decorre da legislação. O Decreto n. 7.983/2013 
+estabelece que o custo global de referência de obras e serviços de engenharia contratados 
+com recursos dos orçamentos da União será obtido a partir das composições e dos custos 
+unitários do SINAPI ()\citeonline{BRASIL, 2013}). A Lei n. 14.133/2021, por sua vez, indica o sistema 
+como parâmetro prioritário para a estimativa do valor de obras e serviços de engenharia 
+(\citeonline{BRASIL, 2021}). Em consequência, a qualidade dos preços do SINAPI condiciona tanto a 
+elaboração dos orçamentos quanto o controle de sobrepreço feito pelos órgãos de controle.
 
-Para o setor público, a adoção dessas abordagens representa uma oportunidade de aprimorar a eficiência na aplicação dos recursos, reduzir riscos de execução e fortalecer mecanismos de transparência e controle. No caso específico desta pesquisa, tais benefícios podem ser observados na utilização dos dados do SINAPI para previsão de custos da construção civil e planejamento de investimentos governamentais.
+\section{Dados ausentes e imputação em estatísticas de preços}
 
-\section{O SINAPI como Base Estratégica para Apoio à Decisão}
+A teoria moderna de dados ausentes parte da classificação de RUBIN (\citeonline{1976}), sistematizada 
+por Little e Rubin (\citeonline{2019}). A ausência é completamente aleatória (MCAR) quando a 
+probabilidade de um valor faltar não depende de nenhuma variável, observada ou não; 
+aleatória (MAR) quando depende apenas de variáveis observadas; e não aleatória (MNAR) 
+quando depende do próprio valor não observado, mesmo depois de se condicionar às variáveis 
+observadas. A distinção importa porque métodos e protocolos de avaliação que supõem MCAR 
+podem produzir estimativas e comparações enganosas quando a ausência é MAR ou MNAR.
 
-O Sistema Nacional de Pesquisa de Custos e Índices da Construção Civil (SINAPI) constitui a principal referência de preços e custos da construção civil utilizada pela administração pública brasileira. Segundo a \citeonline{caixaSINAPI}, o sistema reúne mensalmente informações sobre insumos, composições e índices de custos para todas as unidades da federação, servindo como base para orçamentos, medições e fiscalização de obras públicas.
+Institutos oficiais de estatística convivem com esse problema há décadas. No índice de 
+preços ao consumidor dos Estados Unidos, o Bureau of Labor Statistics imputa preços 
+ausentes com regras como o carry-forward (repetição do último preço observado) e a 
+imputação cell-relative, que atualiza o último preço do item pela variação observada nos 
+itens comparáveis da mesma célula (\citeonline{U.S. BUREAU OF LABOR STATISTICS, 2026}). Essas regras 
+são simples, transparentes e auditáveis, e por isso constituem as referências naturais 
+para avaliar métodos mais sofisticados.
 
-A relevância estratégica do SINAPI foi reforçada pela própria Caixa Econômica Federal ao lançar, em 2026, iniciativa voltada à modernização do sistema por meio do Certame nº 0071/2026. A proposta reconhece a necessidade de ampliar as possibilidades de utilização dos dados e incentivar o desenvolvimento de soluções tecnológicas capazes de gerar inteligência para o setor da construção civil.
+Do lado estatístico e computacional, duas famílias 
+de métodos dominam a imputação de painéis. A primeira é o completamento de matrizes de 
+posto baixo, que supõe que a matriz de dados é explicada por poucos fatores latentes e 
+recupera as entradas ausentes por minimização da norma nuclear (\citeonline{CANDÈS; RECHT, 2009}); 
+Athey et al. (\citeonline{2021}) adaptaram a abordagem a painéis com padrões de ausência estruturados. 
+A segunda são os métodos baseados em árvores de decisão, como o missForest 
+(\citeonline{STEKHOVEN; BÜHLMANN, 2012}), que se mostram competitivos em comparações amplas de métodos 
+de imputação (\citeonline{JÄGER; ALLHORN; BIESSMANN, 2021}). Para séries temporais multivariadas, 
+modelos profundos baseados em autoatenção, como o SAITS (\citeonline{DU; CÔTÉ; LIU, 2023}), 
+tornaram-se referência. Os benchmarks de Jäger, Allhorn e Bießmann (\citeonline{2021}) e Du, 
+Wang et al. (\citeonline{2024}) chamam a atenção para um ponto metodológico central: o desempenho 
+relativo dos métodos depende do mecanismo e do padrão de ausência usados na avaliação, 
+e máscaras aleatórias célula a célula tendem a favorecer métodos que exploram vizinhança 
+temporal imediata.
 
-Apesar de sua ampla utilização institucional, o SINAPI permanece predominantemente voltado à consulta de informações históricas. Dessa forma, permanece pouco explorado o potencial da base para aplicações preditivas capazes de antecipar tendências, estimar custos futuros e subsidiar decisões relacionadas à alocação de recursos públicos.
+\section{Aprendizado de máquina na estimativa de custos da construção}
 
-A partir dessa perspectiva, esta pesquisa propõe a utilização dos dados do SINAPI como insumo para modelos estatísticos espaço-temporais e algoritmos de inteligência artificial, buscando transformar uma base tradicionalmente consultiva em um instrumento de apoio à tomada de decisão em políticas públicas de infraestrutura. A Figura \ref{fig:arquitetura_sinapi} apresenta a arquitetura conceitual que orienta o desenvolvimento desta pesquisa.
-
-%% --- Exemplo de figura com legenda ACIMA e fonte ABAIXO --------------------
-\begin{figure}[htb]
-  \caption{Arquitetura conceitual da aplicação de inteligência artificial aos dados do SINAPI para apoio à tomada de decisão em políticas públicas}
-  \label{fig:arquitetura_sinapi}
-  \centering
-  \includegraphics[width=0.8\textwidth]{figuras/infografico-fluxo-sinapi.png}
-  \fonte{Elaborado pela autora com auxílio do Copilot (2026).}
-\end{figure}
-
-
-\section{Inteligência Artificial e Machine Learning na Previsão de Custos}
-
-A evolução dos modelos computacionais impulsionou a utilização de técnicas de Inteligência Artificial para problemas de previsão em diferentes áreas do conhecimento. Conforme destacam \citeonline{goodfellow2016deeplearning}, algoritmos de Deep Learning apresentam elevada capacidade de identificar padrões complexos e relações não lineares em grandes conjuntos de dados.
-
-Essa perspectiva também é relevante para a definição metodológica desta pesquisa, uma vez 
-que a escolha do algoritmo de aprendizado de máquina não deve ser feita de forma abstrata, 
-mas considerando as características da distribuição dos dados e do problema analisado. Nesse 
-sentido, os autores destacam: 
-
-\begin{citacao}
-  De certa forma, nenhum algoritmo de aprendizado de máquina é universalmente 
-  melhor do que qualquer outro. [...] Se fizermos suposições sobre os tipos de 
-  distribuições de probabilidade que encontramos em aplicações do mundo real, então podemos projetar 
-  algoritmos de aprendizado que funcionam bem nessas distribuições. Isso significa que o 
-  objetivo da pesquisa em aprendizado de máquina não é buscar um algoritmo de aprendizado 
-  universal ou o melhor algoritmo de aprendizado absoluto. 
-  \parencite[p. 115]{goodfellow2016deeplearning} 
-\end{citacao} 
-
-Esse princípio fundamenta a opção desta pesquisa por comparar diferentes abordagens de 
-modelagem antes de selecionar o algoritmo mais adequado aos dados do SINAPI. Assim, a 
-definição do modelo será orientada pelo comportamento empírico das séries históricas, 
-pelas dimensões temporal e territorial dos dados e pelo desempenho obtido nas métricas de 
-avaliação, em vez de pressupor previamente a superioridade de uma técnica específica.
-
-No campo da construção civil, a literatura recente demonstra crescente utilização de técnicas de Machine Learning para estimativa e previsão de custos. \citeonline{karadimos2024taxonomy} identificam uma ampla variedade de algoritmos aplicados ao problema, incluindo redes neurais artificiais, árvores de decisão, métodos de ensemble learning e modelos híbridos.
-
-Resultados semelhantes são apresentados por \citeonline{shamim2025advancement}, que demonstram o crescimento da utilização de técnicas de Machine Learning e Deep Learning em projetos de engenharia, destacando ganhos de precisão quando comparados aos métodos tradicionais de estimação de custos.
-
-Tais evidências reforçam a hipótese desta pesquisa de que modelos avançados de Inteligência Artificial podem aumentar a capacidade preditiva do SINAPI e contribuir para o aprimoramento do planejamento orçamentário e da gestão de riscos em projetos de infraestrutura.
-
-\subsection{Modelos Temporais Aplicados à Construção Civil}
-
-A análise temporal dos custos representa um dos principais desafios para a gestão de obras e investimentos públicos. Nesse contexto, \citeonline{wang2024bilstm} demonstram que modelos baseados em redes neurais Bidirectional Long Short-Term Memory (BiLSTM) apresentam elevada capacidade para capturar padrões temporais complexos na evolução dos custos da construção civil.
-
-Os resultados obtidos pelos autores indicam que arquiteturas de aprendizado profundo podem identificar tendências e ciclos econômicos que influenciam o comportamento dos preços, ampliando a precisão dos modelos de previsão em comparação a abordagens tradicionais.
-
-\subsection{Modelos Espaço-Temporais e Diferenças Regionais}
-
-A literatura recente reconhece que a dimensão geográfica exerce influência significativa sobre o comportamento dos custos da construção civil. Fatores como disponibilidade de insumos, características logísticas, condições econômicas locais e aspectos regionais afetam diretamente a formação dos preços.
-
-Nesse sentido, \citeonline{mostofi2026bilstm} desenvolveram modelos espaço-temporais baseados em Deep Learning capazes de incorporar simultaneamente características geográficas e temporais para previsão de desempenho de custos em projetos de construção. Os resultados evidenciam ganhos relevantes de precisão quando comparados a modelos que consideram apenas a dimensão temporal.
-
-Essa abordagem apresenta especial relevância para esta pesquisa, considerando que um dos objetivos consiste em investigar se a utilização de valores de referência da região de São Paulo para localidades sem observações próprias pode introduzir distorções nos orçamentos públicos e impactar a eficiência da alocação de recursos governamentais.
-
-\section{Aplicações de Inteligência Artificial em Projetos de Infraestrutura}
-
-De forma complementar, \citeonline{antoniou2025highway} desenvolveram modelos de aprendizado de máquina voltados à previsão de custos de rodovias, demonstrando que algoritmos baseados em aprendizado supervisionado podem fornecer estimativas confiáveis já nas fases iniciais de planejamento.
-
-Esses estudos reforçam o potencial da aplicação de técnicas avançadas de análise de dados em bases públicas de custos, indicando oportunidades para ampliar o uso do SINAPI como ferramenta de inteligência para apoio à tomada de decisão em políticas públicas de infraestrutura.
-
-\section{Síntese da Literatura e Lacuna de Pesquisa}
-
-A revisão da literatura evidencia que a utilização de Inteligência Artificial, Machine Learning e modelos espaço-temporais para previsão de custos em projetos de engenharia constitui uma área de pesquisa em rápida expansão. Os trabalhos analisados demonstram ganhos consistentes na precisão das estimativas e na capacidade de antecipação de riscos.
-
-Contudo, observa-se que a maior parte das pesquisas foi desenvolvida utilizando bases proprietárias ou conjuntos de dados internacionais. Permanecem escassos os estudos que exploram bases públicas nacionais de ampla abrangência territorial para suporte à formulação de políticas públicas.
-
-Diante desse cenário, esta pesquisa busca preencher essa lacuna por meio da aplicação de modelos estatísticos espaço-temporais, Machine Learning e Big Data sobre os dados do SINAPI, avaliando tanto sua capacidade de produzir previsões confiáveis de custos quanto seu potencial para identificar distorções regionais de preços que possam impactar a eficiência das contratações públicas e a formulação de políticas públicas de infraestrutura.
-
-
-
+A estimativa de custos da construção tem longa tradição no uso de regressão, redes neurais 
+e raciocínio baseado em casos (\citeonline{BOWEN; EDWARDS, 1985; HEGAZY; AYED, 1998; EMSLEY et al., 
+2002; LAYER et al., 2002; TROST; OBERLENDER, 2003; KIM; AN; KANG, 2004; SONMEZ, 2004; 
+GÜNAYDIN; DOĞAN, 2004; ELFAKI; ALATAWI; ABUSHANDI, 2014; SWEI; GREGORY; KIRCHAIN, 2017; 
+TIJANIĆ; CAR-PUŠIĆ; ŠPERAC, 2020}). A revisão sistemática de Tayefeh Hashemi, Ebadati e 
+Kaur (\citeonline{2020}), ponto de partida da literatura consultada neste trabalho, sintetiza essa 
+tradição e mostra o predomínio de redes neurais e modelos de regressão aplicados ao custo 
+de projetos de edificações e de infraestrutura. Os trabalhos que a citam ampliaram o 
+repertório para ensembles, boosting, redes profundas, aprendizado de máquina automatizado 
+e modelos de linguagem (\citeonline{SHOAR; CHILESHE; EDWARDS, 2022; UDDIN; ONG; LU, 2022; PARK et 
+al., 2022; İNAN; NARBAEV; HAZIR, 2022; DARKO et al., 2023; SAEIDLOU; GHADIMINIA, 2024; 
+DAS et al., 2024; DOPAZO et al., 2024; ZHANG et al., 2025; JAFARY et al., 2026; 
+ABDELSALAM; ASHMAWI; NGUYEN, 2026}), e mapeamentos bibliométricos registram o crescimento 
+acelerado da área (\citeonline{NGUYEN VAN; NGUYEN QUOC, 2021; KAUSHIK et al., 2024; SADIKOGLU; 
+DEMIRKESEN, 2026}).
+As revisões convergem em três críticas: os estudos usam amostras 
+pequenas, frequentemente de algumas dezenas ou centenas de projetos; a validação 
+raramente respeita a ordem temporal, o que superestima o desempenho fora da amostra; e 
+poucos trabalhos quantificam a incerteza das estimativas (\citeonline{TAYEFEH HASHEMI; EBADATI; 
+KAUR, 2020; ELMOUSALAMI, 2020; SHAMIM et al., 2025; WANG et al., 2025}). Em comum, esses 
+estudos têm o projeto como unidade de análise. A unidade adotada neste trabalho, o preço 
+de cada insumo num sistema oficial de referência, permite responder às três críticas: 
+oferece centenas de milhares de observações, admite avaliação estritamente fora da amostra 
+no tempo e permite verificar a cobertura dos intervalos de previsão.
 
 
-%% --- Exemplo de quadro -----------------------------------------------------
-\begin{quadro}[htb]
-  \caption{Título do quadro}
-  \label{qua:exemplo}
-  \centering
-  \begin{tabular}{ll}
-    \toprule
-    \textbf{Elemento} & \textbf{Norma aplicável} \\
-    \midrule
-    Trabalhos acadêmicos & NBR 14724 \\
-    Referências          & NBR 6023  \\
-    Citações             & NBR 10520 \\
-    Sumário              & NBR 6027  \\
-    Resumo               & NBR 6028  \\
-    \bottomrule
-  \end{tabular}
-  \fonte{Elaborado pelo autor (\the\year).}
-\end{quadro}
+\subsection{Métodos de aprendizado empregados}
 
-%% --- Exemplo de tabela -----------------------------------------------------
-\begin{table}[htb]
-  \caption{Nome da Tabela 1}
-  \label{tab:exemplo}
-  \centering
-  \begin{tabular}{lrr}
-    \toprule
-    \textbf{Categoria} & \textbf{Frequência} & \textbf{\%} \\
-    \midrule
-    Categoria A & 120 & 40,0 \\
-    Categoria B &  90 & 30,0 \\
-    Categoria C &  90 & 30,0 \\
-    \midrule
-    \textbf{Total} & \textbf{300} & \textbf{100,0} \\
-    \bottomrule
-  \end{tabular}
-  \fonte{Dados da pesquisa (\the\year).}
-\end{table}
+O gradient boosting combina sequencialmente árvores de decisão rasas, cada uma ajustada 
+aos resíduos das anteriores (\citeonline{FRIEDMAN, 2001}). Em dados tabulares, modelos baseados em 
+árvores continuam a superar redes neurais profundas na maioria das comparações 
+(\citeonline{GRINSZTAJN; OYALLON; VAROQUAUX, 2022}), e modelos globais, ajustados a todas as séries 
+de um painel ao mesmo tempo, venceram a competição M5 de previsão (\citeonline{MAKRIDAKIS; SPILIOTIS; 
+ASSIMAKOPOULOS, 2022}). Na estimativa de custos da construção, boosting e suas variantes 
+também aparecem entre os métodos de melhor desempenho (\citeonline{İNAN; NARBAEV; HAZIR, 2022; DAS 
+et al., 2024; ZHANG et al., 2025}).
 
-%% --- Exemplo de grafico ----------------------------------------------------
-\begin{grafico}[htb]
-  \caption{Nome do Gráfico 1}
-  \label{gra:exemplo}
-  \centering
-  \includegraphics[width=0.55\textwidth]{figuras/exemplo-figura.png}
-  \fonte{Elaborado pelo autor (\the\year).}
-\end{grafico}
+ Redes neurais lidam com variáveis categóricas de muitos níveis, como insumo e UF, 
+ por meio de embeddings de entidade, vetores densos aprendidos junto com a rede 
+ (\citeonline{GUO; BERKHAHN, 2016}). Para séries temporais multivariadas com lacunas, o SAITS 
+ combina blocos de autoatenção treinados para reconstruir valores mascarados 
+ (\citeonline{DU; CÔTÉ; LIU, 2023}). Por fim, a combinação de modelos por stacking, com pesos não 
+ negativos estimados numa amostra de validação (\citeonline{BREIMAN, 1996}), explora a 
+ complementaridade de métodos heterogêneos e tem mostrado ganhos na previsão de custos 
+ de edificações (\citeonline{PARK et al., 2022}).
+
+\subsection{Quantificação da incerteza e comparação de modelos}
+
+A predição conformal produz intervalos de previsão com cobertura garantida em amostras 
+finitas sob a hipótese de permutabilidade, sem supor uma distribuição para os erros 
+(\citeonline{VOVK; GAMMERMAN; SHAFER, 2005}). Na versão dividida (split conformal), os resíduos de 
+uma amostra de calibração definem diretamente a largura do intervalo (\citeonline{LEI et al., 2018}). 
+Quando a distribuição muda ao longo do tempo, a inferência conformal adaptativa ajusta o 
+nível de cobertura a cada período com base nos erros recentes (\citeonline{GIBBS; CANDÈS, 2021}). 
+
+Para comparar a acurácia de previsões, o teste de Diebold e Mariano (\citeonline{1995}) avalia a 
+diferença de perda entre dois modelos levando em conta a dependência dos erros. Quando 
+muitos modelos são comparados ao mesmo tempo, o Model Confidence Set de Hansen, Lunde e 
+Nason (\citeonline{2011}) identifica o conjunto de modelos estatisticamente indistinguíveis do melhor 
+a um nível de confiança escolhido, evitando a escolha de um vencedor por diferenças que 
+podem ser apenas ruído.
+
+\section{Previsão de preços e índices de construção}
+
+A previsão de preços de materiais e de índices de custo da construção combina tradicionalmente
+modelos de séries temporais e indicadores macroeconômicos (\citeonline{SHAHANDASHTI;
+ASHURI, 2013; ELFAHHAM, 2019}); trabalhos recentes usam redes recorrentes, lógica nebulosa
+e modelos de aprendizado de máquina com variáveis macroeconômicas (\citeonline{ALZARA et al., 2025;
+AL KAILANI et al., 2025; MYRVANG; LIU, 2025}). A revisão de Liu et al. (\citeonline{2024}) mostra o
+predomínio de redes do tipo LSTM (\citeonline{HOCHREITER; SCHMIDHUBER, 1997}) nessa literatura,
+e Lyu et al. (\citeonline{2025}) propõem uma abordagem granular, por material, que compara modelos
+econométricos, de aprendizado de máquina e o modelo fundacional Chronos (\citeonline{ANSARI et al.,
+2024}). A avaliação por origem móvel (\citeonline{TASHMAN, 2000}), os modelos globais para grupos de
+séries (\citeonline{MONTERO-MANSO; HYNDMAN, 2021}) e a reconciliação de previsões hierárquicas
+(\citeonline{WICKRAMASURIYA; ATHANASOPOULOS; HYNDMAN, 2019}) oferecem o arcabouço
+para explorar, na previsão, a mesma estrutura hierárquica de insumos e composições do SINAPI.
+
+\section{Síntese e lacuna}
+
+A literatura revisada permite três conclusões, a primeira é que o aprendizado de máquina já é 
+uma ferramenta corrente na estimativa de custos da construção, mas quase sempre aplicado a 
+projetos individuais, com amostras pequenas e pouca atenção à validação temporal e à 
+incerteza. Segundo, a imputação de dados ausentes dispõe de métodos maduros, mas a 
+comparação entre eles é sensível ao padrão de ausência usado na avaliação. Terceiro, 
+sistemas oficiais de preços enfrentam o problema de células sem amostra com regras 
+simples, e o SINAPI adota a mais simples delas: o preço de São Paulo. Não se encontrou 
+trabalho que avalie métodos de aprendizado de máquina para as lacunas de um sistema 
+oficial de preços de construção sob o padrão real de ausência, com intervalos calibrados, 
+nem que meça o efeito da regra institucional sobre os custos de referência. Essa é a 
+lacuna que o presente trabalho procura preencher.
+
+
+
+
